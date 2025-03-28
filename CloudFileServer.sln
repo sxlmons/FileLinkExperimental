@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudFileServer", "CloudFileServer\CloudFileServer.csproj", "{5BE167BE-0086-44FE-A398-23C29702342F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudFileClient", "CloudFileClient\CloudFileClient.csproj", "{6DCDD03D-DAD5-4F72-9856-4ACAD5772631}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTestScript", "ClientTestScript\ClientTestScript.csproj", "{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +14,9 @@ Global
 		{5BE167BE-0086-44FE-A398-23C29702342F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BE167BE-0086-44FE-A398-23C29702342F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BE167BE-0086-44FE-A398-23C29702342F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6DCDD03D-DAD5-4F72-9856-4ACAD5772631}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6DCDD03D-DAD5-4F72-9856-4ACAD5772631}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6DCDD03D-DAD5-4F72-9856-4ACAD5772631}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6DCDD03D-DAD5-4F72-9856-4ACAD5772631}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

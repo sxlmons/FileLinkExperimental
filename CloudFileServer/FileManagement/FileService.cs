@@ -13,8 +13,11 @@ namespace CloudFileServer.FileManagement
     /// </summary>
     public class FileService
     {
+        /// <summary>
+        /// Private fields in FileService class
+        /// </summary>
         private readonly IFileRepository _fileRepository;
-        private readonly string _storagePath;
+        private readonly PhysicalStorageService _storageService;
         private readonly LogService _logService;
         private readonly ArrayPool<byte> _bufferPool;
         
@@ -27,21 +30,22 @@ namespace CloudFileServer.FileManagement
         /// Initializes a new instance of the FileService class.
         /// </summary>
         /// <param name="fileRepository">The file repository.</param>
-        /// <param name="storagePath">The path to the directory where files are stored.</param>
+        /// <param name="storageService">The physical storage service.</param>
         /// <param name="logService">The logging service.</param>
         /// <param name="chunkSize">The chunk size for file transfers. Default is 1MB.</param>
-        public FileService(IFileRepository fileRepository, string storagePath, LogService logService, int chunkSize = 1024 * 1024)
+        public FileService(
+            IFileRepository fileRepository,
+            PhysicalStorageService storageService,
+            LogService logService,
+            int chunkSize = 1024 * 1024)
         {
             _fileRepository = fileRepository ?? throw new ArgumentNullException(nameof(fileRepository));
-            _storagePath = storagePath ?? throw new ArgumentNullException(nameof(storagePath));
+            _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
             _logService = logService ?? throw new ArgumentNullException(nameof(logService));
             ChunkSize = chunkSize;
-            
+    
             // Initialize buffer pool for efficient memory usage
             _bufferPool = ArrayPool<byte>.Shared;
-            
-            // Ensure the storage directory exists
-            Directory.CreateDirectory(_storagePath);
         }
 
         /// <summary>
@@ -51,8 +55,9 @@ namespace CloudFileServer.FileManagement
         /// <param name="fileName">The file name.</param>
         /// <param name="fileSize">The file size.</param>
         /// <param name="contentType">The content type.</param>
+        /// <param name="directoryId">Optional directory ID where the file should be stored.</param>
         /// <returns>The file metadata for the new file.</returns>
-        public async Task<FileMetadata> InitializeFileUpload(string userId, string fileName, long fileSize, string contentType)
+        public async Task<FileMetadata> InitializeFileUpload(string userId, string fileName, long fileSize, string contentType, string directoryId = null)
         {
             try
             {
@@ -68,39 +73,59 @@ namespace CloudFileServer.FileManagement
                 // Sanitize the file name
                 fileName = SanitizeFileName(fileName);
                 
-                // Create the user's directory if it doesn't exist
-                string userDirectory = Path.Combine(_storagePath, userId);
-                Directory.CreateDirectory(userDirectory);
-                
                 // Generate a unique file ID
                 string fileId = Guid.NewGuid().ToString();
                 
-                // Generate a unique file path
-                string filePath = Path.Combine(userDirectory, fileId + "_" + fileName);
+                // Generate the file path
+                string filePath;
+                
+                if (string.IsNullOrEmpty(directoryId))
+                {
+                    // Store in user's root directory
+                    filePath = _storageService.GetRootFilePath(userId, fileName, fileId);
+                }
+                else
+                {
+                    // Lookup the directory's physical path
+                    var directoryMetadata = await _fileRepository.GetDirectoryById(directoryId);
+                    if (directoryMetadata == null || directoryMetadata.UserId != userId)
+                    {
+                        throw new FileOperationException($"Directory {directoryId} not found or not owned by user {userId}");
+                    }
+                    
+                    // Get the file path in this directory
+                    filePath = _storageService.GetFilePathInDirectory(directoryMetadata.DirectoryPath, fileName, fileId);
+                    
+                    // Ensure the directory exists
+                    _storageService.CreateDirectory(directoryMetadata.DirectoryPath);
+                }
                 
                 // Create file metadata
                 var metadata = new FileMetadata(userId, fileName, fileSize, contentType, filePath)
                 {
                     TotalChunks = CalculateTotalChunks(fileSize),
                     ChunksReceived = 0,
-                    IsComplete = false
+                    IsComplete = false,
+                    DirectoryId = directoryId
                 };
+                
+                // Create an empty file
+                if (!_storageService.CreateEmptyFile(filePath))
+                {
+                    throw new FileOperationException($"Failed to create file at {filePath}");
+                }
                 
                 // Add the metadata to the repository
                 bool success = await _fileRepository.AddFileMetadata(metadata);
                 
                 if (!success)
                 {
+                    // Clean up the empty file
+                    _storageService.DeleteFile(filePath);
                     throw new FileOperationException("Failed to initialize file upload.");
                 }
                 
-                // Create an empty file
-                using (var fs = File.Create(filePath))
-                {
-                    // Just create the file, we'll write to it during chunk processing
-                }
-                
-                _logService.Info($"File upload initialized: {fileName} (ID: {fileId}, Size: {fileSize} bytes, User: {userId})");
+                _logService.Info($"File upload initialized: {fileName} (ID: {fileId}, Size: {fileSize} bytes, User: {userId}, Directory: {directoryId ?? "root"}, Path: {filePath})");
                 
                 return metadata;
             }
@@ -521,6 +546,34 @@ namespace CloudFileServer.FileManagement
         }
         
         /// <summary>
+        /// Gets file metadata by ID.
+        /// </summary>
+        /// <param name="fileId">The file ID.</param>
+        /// <returns>The file metadata, or null if not found.</returns>
+        public async Task<FileMetadata> GetFileMetadataById(string fileId)
+        {
+            if (string.IsNullOrEmpty(fileId))
+                throw new ArgumentException("File ID cannot be empty.", nameof(fileId));
+    
+            try
+            {
+                var metadata = await _fileRepository.GetFileMetadataById(fileId);
+        
+                if (metadata == null)
+                {
+                    _logService.Debug($"File metadata not found for ID: {fileId}");
+                }
+        
+                return metadata;
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Error getting file metadata by ID: {ex.Message}", ex);
+                return null;
+            }
+        }
+        
+        /// <summary>
         /// Updates the metadata for a file.
         /// </summary>
         /// <param name="fileMetadata">The file metadata to update.</param>
@@ -548,6 +601,145 @@ namespace CloudFileServer.FileManagement
             catch (Exception ex)
             {
                 _logService.Error($"Error updating file metadata: {ex.Message}", ex);
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Moves a file to a different directory, updating both logical and physical locations.
+        /// </summary>
+        /// <param name="fileId">The file ID.</param>
+        /// <param name="targetDirectoryId">The target directory ID, or null for root directory.</param>
+        /// <param name="userId">The user ID.</param>
+        /// <returns>True if the file was moved successfully, otherwise false.</returns>
+        public async Task<bool> MoveFileToDirectory(string fileId, string targetDirectoryId, string userId)
+        {
+            if (string.IsNullOrEmpty(fileId))
+                throw new ArgumentException("File ID cannot be empty.", nameof(fileId));
+                
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+            
+            try
+            {
+                // Get the file metadata
+                var fileMetadata = await _fileRepository.GetFileMetadataById(fileId);
+                if (fileMetadata == null)
+                {
+                    _logService.Warning($"File not found: {fileId}");
+                    return false;
+                }
+                
+                // Check if the user owns the file
+                if (fileMetadata.UserId != userId)
+                {
+                    _logService.Warning($"User {userId} attempted to move file owned by {fileMetadata.UserId}");
+                    return false;
+                }
+                
+                // If the file is already in the target directory, nothing to do
+                if ((targetDirectoryId == null && fileMetadata.DirectoryId == null) ||
+                    (fileMetadata.DirectoryId == targetDirectoryId))
+                {
+                    _logService.Debug($"File {fileId} is already in the specified directory");
+                    return true;
+                }
+                
+                // Determine the target directory path
+                string targetPath;
+                if (string.IsNullOrEmpty(targetDirectoryId))
+                {
+                    // Target is root directory
+                    targetPath = Path.Combine(_storagePath, userId);
+                }
+                else
+                {
+                    // Target is a specific directory
+                    var targetDir = await _directoryRepository.GetDirectoryMetadataById(targetDirectoryId);
+                    if (targetDir == null || targetDir.UserId != userId)
+                    {
+                        _logService.Warning($"Target directory not found or not owned by user: {targetDirectoryId}");
+                        return false;
+                    }
+                    
+                    targetPath = targetDir.DirectoryPath;
+                }
+                
+                // Ensure the target directory exists
+                if (!Directory.Exists(targetPath))
+                {
+                    Directory.CreateDirectory(targetPath);
+                }
+                
+                // Get just the filename part of the current path
+                string fileName = Path.GetFileName(fileMetadata.FilePath);
+                string newFilePath = Path.Combine(targetPath, fileName);
+                
+                // If a file with the same name already exists in the target, create a unique name
+                if (File.Exists(newFilePath) && newFilePath != fileMetadata.FilePath)
+                {
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                    string extension = Path.GetExtension(fileName);
+                    string uniqueName = $"{fileNameWithoutExt}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
+                    newFilePath = Path.Combine(targetPath, uniqueName);
+                }
+                
+                // Move the physical file
+                if (File.Exists(fileMetadata.FilePath))
+                {
+                    // Only move if the paths are different
+                    if (fileMetadata.FilePath != newFilePath)
+                    {
+                        File.Move(fileMetadata.FilePath, newFilePath);
+                        _logService.Debug($"Moved physical file from {fileMetadata.FilePath} to {newFilePath}");
+                    }
+                }
+                else
+                {
+                    _logService.Warning($"Physical file not found at {fileMetadata.FilePath}");
+                    // We'll still update the metadata even if the physical file is missing
+                }
+                
+                // Update the file metadata
+                string oldDirectoryId = fileMetadata.DirectoryId;
+                string oldFilePath = fileMetadata.FilePath;
+                
+                fileMetadata.DirectoryId = targetDirectoryId;
+                fileMetadata.FilePath = newFilePath;
+                fileMetadata.UpdatedAt = DateTime.Now;
+                
+                // Update the metadata in the repository
+                bool success = await _fileRepository.UpdateFileMetadata(fileMetadata);
+                
+                if (success)
+                {
+                    _logService.Info($"File moved: {fileId} from directory {oldDirectoryId ?? "root"} to {targetDirectoryId ?? "root"}, path updated from {oldFilePath} to {newFilePath}");
+                    return true;
+                }
+                else
+                {
+                    _logService.Error($"Failed to update metadata for file {fileId} after moving");
+                    
+                    // Try to move the file back if we moved it
+                    if (File.Exists(newFilePath) && oldFilePath != newFilePath)
+                    {
+                        try
+                        {
+                            File.Move(newFilePath, oldFilePath);
+                            _logService.Debug($"Rolled back physical file move from {newFilePath} to {oldFilePath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logService.Error($"Error rolling back file move after metadata update failure: {ex.Message}", ex);
+                        }
+                    }
+                    
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Error moving file to directory: {ex.Message}", ex);
                 return false;
             }
         }

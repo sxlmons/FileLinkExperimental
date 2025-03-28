@@ -62,17 +62,20 @@ namespace CloudFileServer
                 _logService.Info("Cloud File Server starting...");
                 _logService.Info($"Server configuration: Port={Configuration.Port}, MaxConcurrentClients={Configuration.MaxConcurrentClients}");
 
-                // Initialize authentication components
+                // Initialize repositories
+                _directoryRepository = new DirectoryRepository(Configuration.FileMetadataPath, _logService);
+                _fileRepository = new FileRepository(Configuration.FileMetadataPath, Configuration.FileStoragePath, _logService);
                 _userRepository = new UserRepository(Configuration.UsersDataPath, _logService);
+
+                // Initialize the physical storage service
+                var storageService = new PhysicalStorageService(Configuration.FileStoragePath, _logService);
+
+                // Initialize authentication service
                 _authService = new AuthenticationService(_userRepository, _logService);
 
-                // Initialize file management components
-                _fileRepository = new FileRepository(Configuration.FileMetadataPath, Configuration.FileStoragePath, _logService);
-                _fileService = new FileService(_fileRepository, Configuration.FileStoragePath, _logService, Configuration.ChunkSize);
-                
-                // Initialize directory management components
-                _directoryRepository = new DirectoryRepository(Configuration.FileMetadataPath, _logService);
-                _directoryService = new DirectoryService(_directoryRepository, _fileRepository, Configuration.FileStoragePath, _logService);
+                // Initialize directory and file services
+                _directoryService = new DirectoryService(_directoryRepository, _fileRepository, storageService, _logService);
+                _fileService = new FileService(_fileRepository, storageService, _logService, Configuration.ChunkSize);
 
                 // Initialize client session management
                 _clientSessionManager = new ClientSessionManager(_logService, Configuration);

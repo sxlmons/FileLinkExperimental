@@ -15,6 +15,7 @@ namespace CloudFileServer.Commands
     public class FileUploadCommandHandler : ICommandHandler
     {
         private readonly FileService _fileService;
+        private readonly DirectoryService _directoryService;
         private readonly LogService _logService;
         private readonly PacketFactory _packetFactory = new PacketFactory();
 
@@ -22,10 +23,15 @@ namespace CloudFileServer.Commands
         /// Initializes a new instance of the FileUploadCommandHandler class.
         /// </summary>
         /// <param name="fileService">The file service.</param>
+        /// <param name="directoryService">The directory service.</param>
         /// <param name="logService">The logging service.</param>
-        public FileUploadCommandHandler(FileService fileService, LogService logService)
+        public FileUploadCommandHandler(
+            FileService fileService, 
+            DirectoryService directoryService,
+            LogService logService)
         {
             _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
+            _directoryService = directoryService ?? throw new ArgumentNullException(nameof(directoryService));
             _logService = logService ?? throw new ArgumentNullException(nameof(logService));
         }
 
@@ -140,10 +146,18 @@ namespace CloudFileServer.Commands
                 if (packet.Metadata.TryGetValue("DirectoryId", out string dirId) && dirId != "root")
                 {
                     directoryId = dirId;
-    
-                    // Validation of directory would be done here
-                    // This would require injecting DirectoryService into this handler
-                    // For now, we'll assume this validation is handled at the service level
+                    
+                    // Validate that the directory exists and the user has access to it
+                    var directory = await _directoryService.GetDirectoryById(directoryId, session.UserId);
+                    if (directory == null)
+                    {
+                        _logService.Warning($"Directory not found or not owned by user: {directoryId}");
+                        return _packetFactory.CreateFileUploadInitResponse(
+                            false, "", "Directory not found or you do not have permission to upload to it.", 
+                            session.UserId);
+                    }
+                    
+                    _logService.Info($"Validated directory for upload: {directory.Name} (ID: {directoryId})");
                 }
 
                 // Initialize the file upload
@@ -153,13 +167,6 @@ namespace CloudFileServer.Commands
                     fileInfo.FileSize,
                     fileInfo.ContentType ?? "application/octet-stream");
                 
-                // Set the directory ID if specified
-                if (!string.IsNullOrEmpty(directoryId))
-                {
-                    fileMetadata.DirectoryId = directoryId;
-                    await _fileService.UpdateFileMetadata(fileMetadata);
-                }
-                
                 if (fileMetadata == null)
                 {
                     _logService.Error($"Failed to initialize file upload for user {session.UserId}");
@@ -167,7 +174,22 @@ namespace CloudFileServer.Commands
                         false, "", "Failed to initialize file upload.", session.UserId);
                 }
                 
-                _logService.Info($"File upload initialized: {fileInfo.FileName} (ID: {fileMetadata.Id}) for user {session.UserId}");
+                // Set the directory ID if specified
+                if (!string.IsNullOrEmpty(directoryId))
+                {
+                    _logService.Debug($"Setting directory ID {directoryId} for file {fileMetadata.Id}");
+                    fileMetadata.DirectoryId = directoryId;
+                    
+                    // Update the file metadata with the directory ID
+                    bool updateSuccess = await _fileService.UpdateFileMetadata(fileMetadata);
+                    if (!updateSuccess)
+                    {
+                        _logService.Warning($"Failed to update file metadata with directory ID: {directoryId}");
+                        // Continue anyway as this is not a critical error
+                    }
+                }
+                
+                _logService.Info($"File upload initialized: {fileInfo.FileName} (ID: {fileMetadata.Id}) for user {session.UserId} in directory {directoryId ?? "root"}");
                 
                 // Create and return the response
                 return _packetFactory.CreateFileUploadInitResponse(
@@ -223,6 +245,15 @@ namespace CloudFileServer.Commands
                         false, fileId, chunkIndex, "Chunk data is required.", session.UserId);
                 }
 
+                // Verify that the file exists and belongs to the user
+                var fileMetadata = await _fileService.GetFileMetadataById(fileId);
+                if (fileMetadata == null || fileMetadata.UserId != session.UserId)
+                {
+                    _logService.Warning($"File not found or not owned by user: {fileId}");
+                    return _packetFactory.CreateFileUploadChunkResponse(
+                        false, fileId, chunkIndex, "File not found or you do not have permission to upload to it.", session.UserId);
+                }
+
                 // Process the chunk
                 bool success = await _fileService.ProcessFileChunk(fileId, chunkIndex, isLastChunk, packet.Payload);
                 
@@ -268,12 +299,32 @@ namespace CloudFileServer.Commands
                         false, "", "File ID is required.", session.UserId);
                 }
 
+                // Verify the file exists and belongs to the user
+                var fileMetadata = await _fileService.GetFileMetadataById(fileId);
+                if (fileMetadata == null || fileMetadata.UserId != session.UserId)
+                {
+                    _logService.Warning($"File not found or not owned by user: {fileId}");
+                    return _packetFactory.CreateFileUploadCompleteResponse(
+                        false, fileId, "File not found or you do not have permission to complete this upload.", session.UserId);
+                }
+
                 // Finalize the upload
                 bool success = await _fileService.FinalizeFileUpload(fileId);
                 
                 if (success)
                 {
-                    _logService.Info($"File upload completed for file {fileId} by user {session.UserId}");
+                    // Get directory name for logging if directory ID is specified
+                    string directoryName = "root";
+                    if (!string.IsNullOrEmpty(fileMetadata.DirectoryId))
+                    {
+                        var directory = await _directoryService.GetDirectoryById(fileMetadata.DirectoryId, session.UserId);
+                        if (directory != null)
+                        {
+                            directoryName = directory.Name;
+                        }
+                    }
+                    
+                    _logService.Info($"File upload completed: {fileMetadata.FileName} (ID: {fileId}) by user {session.UserId} in directory {directoryName} (ID: {fileMetadata.DirectoryId ?? "root"})");
                     return _packetFactory.CreateFileUploadCompleteResponse(
                         true, fileId, "File upload completed successfully.", session.UserId);
                 }
@@ -293,7 +344,7 @@ namespace CloudFileServer.Commands
                     false, fileId, $"Error completing file upload: {ex.Message}", session.UserId);
             }
         }
-
+        
         /// <summary>
         /// Class for deserializing file upload initialization information.
         /// </summary>

@@ -53,7 +53,9 @@ namespace CloudFileServer.Commands
             
             // File operation handlers
             RegisterHandler(new FileListCommandHandler(_fileService, _logService));
-            RegisterHandler(new FileUploadCommandHandler(_fileService, _logService));
+            
+            // Updated to pass DirectoryService to FileUploadCommandHandler
+            RegisterHandler(new FileUploadCommandHandler(_fileService, _directoryService, _logService));
             RegisterHandler(new FileDownloadCommandHandler(_fileService, _logService));
             RegisterHandler(new FileDeleteCommandHandler(_fileService, _logService));
             RegisterHandler(new FileMoveCommandHandler(_directoryService, _logService));

@@ -89,10 +89,7 @@ namespace CloudFileServer.FileManagement
             lock (_lock)
             {
                 var directories = _metadata.Values
-                    .Where(m => m.UserId == userId && 
-                               (parentDirectoryId == null ? 
-                                    string.IsNullOrEmpty(m.ParentDirectoryId) : 
-                                    m.ParentDirectoryId == parentDirectoryId))
+                    .Where(m => m.UserId == userId && (parentDirectoryId == null ? string.IsNullOrEmpty(m.ParentDirectoryId) : m.ParentDirectoryId == parentDirectoryId))
                     .OrderBy(m => m.Name)
                     .ToList();
                 
@@ -356,32 +353,68 @@ namespace CloudFileServer.FileManagement
                 if (!File.Exists(filePath))
                 {
                     _logService.Info($"Directory metadata file not found at {filePath}. Creating a new one.");
+                    // Create an empty dictionary
+                    lock (_lock)
+                    {
+                        _metadata = new Dictionary<string, DirectoryMetadata>();
+                    }
                     return;
                 }
                 
                 // Read the file
                 string json = await File.ReadAllTextAsync(filePath);
                 
-                // Deserialize from JSON
-                var metadataList = JsonSerializer.Deserialize<List<DirectoryMetadata>>(json);
-                
-                // Build the dictionary
-                Dictionary<string, DirectoryMetadata> metadataDict = new Dictionary<string, DirectoryMetadata>();
-                foreach (var metadata in metadataList)
+                if (string.IsNullOrWhiteSpace(json))
                 {
-                    if (!string.IsNullOrEmpty(metadata.Id))
+                    _logService.Warning($"Directory metadata file is empty at {filePath}");
+                    lock (_lock)
                     {
-                        metadataDict[metadata.Id] = metadata;
+                        _metadata = new Dictionary<string, DirectoryMetadata>();
                     }
+                    return;
                 }
                 
-                // Update the metadata dictionary
-                lock (_lock)
+                try
                 {
-                    _metadata = metadataDict;
+                    // Deserialize from JSON
+                    var metadataList = JsonSerializer.Deserialize<List<DirectoryMetadata>>(json);
+                    
+                    // Build the dictionary
+                    Dictionary<string, DirectoryMetadata> metadataDict = new Dictionary<string, DirectoryMetadata>();
+                    foreach (var metadata in metadataList)
+                    {
+                        if (!string.IsNullOrEmpty(metadata.Id))
+                        {
+                            metadataDict[metadata.Id] = metadata;
+                        }
+                    }
+                    
+                    // Update the metadata dictionary
+                    lock (_lock)
+                    {
+                        _metadata = metadataDict;
+                    }
+                    
+                    _logService.Info($"Loaded {_metadata.Count} directory metadata entries from {filePath}");
                 }
-                
-                _logService.Info($"Loaded {_metadata.Count} directory metadata entries from {filePath}");
+                catch (JsonException jsonEx)
+                {
+                    _logService.Warning($"Invalid JSON format in directory metadata file. Creating backup and starting fresh: {jsonEx.Message}");
+                    
+                    // Back up the corrupted file
+                    string backupPath = filePath + $".backup_{DateTime.Now:yyyyMMddHHmmss}";
+                    File.Copy(filePath, backupPath, true);
+                    _logService.Info($"Created backup of directory metadata file at {backupPath}");
+                    
+                    // Start with empty dictionary
+                    lock (_lock)
+                    {
+                        _metadata = new Dictionary<string, DirectoryMetadata>();
+                    }
+                    
+                    // Create a new, valid JSON file
+                    await SaveMetadata();
+                }
             }
             catch (Exception ex)
             {
