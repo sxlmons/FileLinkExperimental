@@ -20,23 +20,26 @@ namespace CloudFileServer.FileManagement
         private readonly object _lock = new object();
         private Dictionary<string, FileMetadata> _metadata = new Dictionary<string, FileMetadata>();
         private readonly LogService _logService;
+        private readonly IDirectoryRepository _directoryRepository;
 
         /// <summary>
         /// Initializes a new instance of the FileRepository class.
         /// </summary>
         /// <param name="metadataPath">The path to the directory where file metadata is stored.</param>
         /// <param name="storagePath">The path to the directory where files are stored.</param>
+        /// <param name="directoryRepository">The directory repository.</param>
         /// <param name="logService">The logging service.</param>
-        public FileRepository(string metadataPath, string storagePath, LogService logService)
+        public FileRepository(string metadataPath, string storagePath, IDirectoryRepository directoryRepository, LogService logService)
         {
             _metadataPath = metadataPath ?? throw new ArgumentNullException(nameof(metadataPath));
             _storagePath = storagePath ?? throw new ArgumentNullException(nameof(storagePath));
+            _directoryRepository = directoryRepository ?? throw new ArgumentNullException(nameof(directoryRepository));
             _logService = logService ?? throw new ArgumentNullException(nameof(logService));
-            
+    
             // Ensure directories exist
             Directory.CreateDirectory(_metadataPath);
             Directory.CreateDirectory(_storagePath);
-            
+    
             // Load metadata from storage
             LoadMetadata().Wait();
         }
@@ -336,6 +339,29 @@ namespace CloudFileServer.FileManagement
             }
 
             return allSuccessful;
+        }
+        
+        /// <summary>
+        /// Gets a directory by its ID.
+        /// </summary>
+        /// <param name="directoryId">The directory ID.</param>
+        /// <returns>The directory metadata, or null if not found.</returns>
+        public async Task<DirectoryMetadata> GetDirectoryById(string directoryId)
+        {
+            try
+            {
+                // This implementation depends on having access to the DirectoryRepository
+                // We'll use the private field _directoryRepository
+                if (string.IsNullOrEmpty(directoryId))
+                    return null;
+        
+                return await _directoryRepository.GetDirectoryMetadataById(directoryId);
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Error getting directory by ID {directoryId}: {ex.Message}", ex);
+                return null;
+            }
         }
     }
 }

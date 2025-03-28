@@ -136,7 +136,7 @@ namespace CloudFileServer.FileManagement
             }
         }
 
-        /// <summary>
+       /// <summary>
         /// Processes a file chunk.
         /// </summary>
         /// <param name="fileId">The file ID.</param>
@@ -173,21 +173,15 @@ namespace CloudFileServer.FileManagement
                     return false;
                 }
                 
-                // Check if the file already exists
-                if (!File.Exists(metadata.FilePath))
-                {
-                    _logService.Warning($"File not found at {metadata.FilePath} for file {fileId}");
-                    return false;
-                }
-                
                 // Calculate the offset in the file
                 long offset = (long)chunkIndex * ChunkSize;
                 
-                // Write the chunk to the file
-                using (var fileStream = new FileStream(metadata.FilePath, FileMode.Open, FileAccess.Write, FileShare.None))
+                // Write the chunk to the file using the storage service
+                bool writeSuccess = await _storageService.WriteFileChunk(metadata.FilePath, chunkData, offset);
+                if (!writeSuccess)
                 {
-                    fileStream.Seek(offset, SeekOrigin.Begin);
-                    await fileStream.WriteAsync(chunkData, 0, chunkData.Length);
+                    _logService.Warning($"Failed to write chunk {chunkIndex} for file {fileId}");
+                    return false;
                 }
                 
                 // Update the metadata
@@ -247,7 +241,7 @@ namespace CloudFileServer.FileManagement
                 // Update the metadata in the repository
                 await _fileRepository.UpdateFileMetadata(metadata);
                 
-                // Verify the file size
+                // Verify the file size - using file system API since this is just a verification
                 var fileInfo = new FileInfo(metadata.FilePath);
                 
                 if (fileInfo.Length != metadata.FileSize)
@@ -422,42 +416,39 @@ namespace CloudFileServer.FileManagement
         {
             if (string.IsNullOrEmpty(fileId))
                 throw new ArgumentException("File ID cannot be empty.", nameof(fileId));
-            
+    
             if (string.IsNullOrEmpty(userId))
                 throw new ArgumentException("User ID cannot be empty.", nameof(userId));
-            
+    
             try
             {
                 // Get the file metadata
                 var metadata = await _fileRepository.GetFileMetadataById(fileId);
-                
+        
                 if (metadata == null)
                 {
                     _logService.Warning($"Attempted to delete non-existent file: {fileId}");
                     return false;
                 }
-                
+        
                 // Check if the user owns the file
-                if (!await ValidateUserOwnership(fileId, userId))
+                if (metadata.UserId != userId)
                 {
                     _logService.Warning($"User {userId} attempted to delete file {fileId} owned by {metadata.UserId}");
                     return false;
                 }
-                
-                // Delete the file
-                if (File.Exists(metadata.FilePath))
-                {
-                    File.Delete(metadata.FilePath);
-                }
-                
+        
+                // Delete the file using the storage service
+                _storageService.DeleteFile(metadata.FilePath);
+        
                 // Delete the metadata
                 bool success = await _fileRepository.DeleteFileMetadata(fileId);
-                
+        
                 if (success)
                 {
                     _logService.Info($"File deleted: {metadata.FileName} (ID: {fileId}, User: {userId})");
                 }
-                
+        
                 return success;
             }
             catch (Exception ex)
@@ -650,12 +641,12 @@ namespace CloudFileServer.FileManagement
                 if (string.IsNullOrEmpty(targetDirectoryId))
                 {
                     // Target is root directory
-                    targetPath = Path.Combine(_storagePath, userId);
+                    targetPath = _storageService.GetUserDirectory(userId);
                 }
                 else
                 {
                     // Target is a specific directory
-                    var targetDir = await _directoryRepository.GetDirectoryMetadataById(targetDirectoryId);
+                    var targetDir = await _fileRepository.GetDirectoryById(targetDirectoryId);
                     if (targetDir == null || targetDir.UserId != userId)
                     {
                         _logService.Warning($"Target directory not found or not owned by user: {targetDirectoryId}");
@@ -665,18 +656,12 @@ namespace CloudFileServer.FileManagement
                     targetPath = targetDir.DirectoryPath;
                 }
                 
-                // Ensure the target directory exists
-                if (!Directory.Exists(targetPath))
-                {
-                    Directory.CreateDirectory(targetPath);
-                }
-                
                 // Get just the filename part of the current path
                 string fileName = Path.GetFileName(fileMetadata.FilePath);
                 string newFilePath = Path.Combine(targetPath, fileName);
                 
                 // If a file with the same name already exists in the target, create a unique name
-                if (File.Exists(newFilePath) && newFilePath != fileMetadata.FilePath)
+                if (new FileInfo(newFilePath).Exists && newFilePath != fileMetadata.FilePath)
                 {
                     string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
                     string extension = Path.GetExtension(fileName);
@@ -684,20 +669,12 @@ namespace CloudFileServer.FileManagement
                     newFilePath = Path.Combine(targetPath, uniqueName);
                 }
                 
-                // Move the physical file
-                if (File.Exists(fileMetadata.FilePath))
+                // Move the physical file using the storage service
+                bool moveSuccess = _storageService.MoveFile(fileMetadata.FilePath, newFilePath);
+                if (!moveSuccess && new FileInfo(fileMetadata.FilePath).Exists)
                 {
-                    // Only move if the paths are different
-                    if (fileMetadata.FilePath != newFilePath)
-                    {
-                        File.Move(fileMetadata.FilePath, newFilePath);
-                        _logService.Debug($"Moved physical file from {fileMetadata.FilePath} to {newFilePath}");
-                    }
-                }
-                else
-                {
-                    _logService.Warning($"Physical file not found at {fileMetadata.FilePath}");
-                    // We'll still update the metadata even if the physical file is missing
+                    _logService.Warning($"Failed to move file from {fileMetadata.FilePath} to {newFilePath}");
+                    return false;
                 }
                 
                 // Update the file metadata
@@ -721,17 +698,9 @@ namespace CloudFileServer.FileManagement
                     _logService.Error($"Failed to update metadata for file {fileId} after moving");
                     
                     // Try to move the file back if we moved it
-                    if (File.Exists(newFilePath) && oldFilePath != newFilePath)
+                    if (new FileInfo(newFilePath).Exists && oldFilePath != newFilePath)
                     {
-                        try
-                        {
-                            File.Move(newFilePath, oldFilePath);
-                            _logService.Debug($"Rolled back physical file move from {newFilePath} to {oldFilePath}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logService.Error($"Error rolling back file move after metadata update failure: {ex.Message}", ex);
-                        }
+                        _storageService.MoveFile(newFilePath, oldFilePath);
                     }
                     
                     return false;

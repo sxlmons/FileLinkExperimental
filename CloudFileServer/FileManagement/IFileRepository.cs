@@ -60,5 +60,12 @@ namespace CloudFileServer.FileManagement
         /// <param name="userId">The user ID.</param>
         /// <returns>True if all files were moved successfully, otherwise false.</returns>
         Task<bool> MoveFilesToDirectory(IEnumerable<string> fileIds, string directoryId, string userId);
+        
+        /// <summary>
+        /// Gets a directory by its ID.
+        /// </summary>
+        /// <param name="directoryId">The directory ID.</param>
+        /// <returns>The directory metadata, or null if not found.</returns>
+        Task<DirectoryMetadata> GetDirectoryById(string directoryId);
     }
 }

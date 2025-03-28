@@ -46,7 +46,7 @@ namespace CloudFileServer
         /// <summary>
         /// Initializes all components of the application.
         /// </summary>
-        public void Initialize()
+       public void Initialize()
         {
             if (_initialized)
                 return;
@@ -62,19 +62,23 @@ namespace CloudFileServer
                 _logService.Info("Cloud File Server starting...");
                 _logService.Info($"Server configuration: Port={Configuration.Port}, MaxConcurrentClients={Configuration.MaxConcurrentClients}");
 
-                // Initialize repositories
-                _directoryRepository = new DirectoryRepository(Configuration.FileMetadataPath, _logService);
-                _fileRepository = new FileRepository(Configuration.FileMetadataPath, Configuration.FileStoragePath, _logService);
-                _userRepository = new UserRepository(Configuration.UsersDataPath, _logService);
-
-                // Initialize the physical storage service
+                // Initialize the physical storage service first
                 var storageService = new PhysicalStorageService(Configuration.FileStoragePath, _logService);
+
+                // Initialize repositories in correct order
+                _directoryRepository = new DirectoryRepository(Configuration.FileMetadataPath, _logService);
+                
+                // FileRepository now depends on DirectoryRepository
+                _fileRepository = new FileRepository(Configuration.FileMetadataPath, Configuration.FileStoragePath, _directoryRepository, _logService);
+                    
+                _userRepository = new UserRepository(Configuration.UsersDataPath, _logService);
 
                 // Initialize authentication service
                 _authService = new AuthenticationService(_userRepository, _logService);
 
-                // Initialize directory and file services
+                // Initialize directory and file services with PhysicalStorageService
                 _directoryService = new DirectoryService(_directoryRepository, _fileRepository, storageService, _logService);
+                    
                 _fileService = new FileService(_fileRepository, storageService, _logService, Configuration.ChunkSize);
 
                 // Initialize client session management
@@ -85,13 +89,7 @@ namespace CloudFileServer
                 _commandHandlerFactory = new CommandHandlerFactory(_authService, _fileService, _directoryService, _logService);
 
                 // Initialize TCP server
-                _tcpServer = new TcpServer(
-                    Configuration.Port,
-                    _logService,
-                    _clientSessionManager,
-                    _commandHandlerFactory,
-                    _sessionStateFactory,
-                    Configuration);
+                _tcpServer = new TcpServer(Configuration.Port, _logService, _clientSessionManager, _commandHandlerFactory, _sessionStateFactory, Configuration);
 
                 _initialized = true;
                 _logService.Info("Cloud File Server initialized successfully");
@@ -101,7 +99,7 @@ namespace CloudFileServer
                 _logService?.Fatal("Failed to initialize Cloud File Server", ex);
                 throw;
             }
-        }
+}
 
         /// <summary>
         /// Starts the server.

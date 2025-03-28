@@ -92,8 +92,9 @@ namespace CloudFileServer.FileManagement
                 // Generate a unique directory ID
                 string directoryId = Guid.NewGuid().ToString();
                 
-                // Get the physical path for the directory
+                // Get the physical path for the directory (and make it absolute)
                 string physicalPath = _storageService.GetDirectoryPath(userId, directoryName, parentPath);
+                physicalPath = Path.GetFullPath(physicalPath);
                 
                 // Create directory metadata
                 var metadata = new DirectoryMetadata(userId, directoryName, parentDirectoryId, physicalPath);
@@ -246,7 +247,7 @@ namespace CloudFileServer.FileManagement
             }
         }
 
-        /// <summary>
+       /// <summary>
         /// Renames a directory.
         /// </summary>
         /// <param name="directoryId">The directory ID.</param>
@@ -299,18 +300,12 @@ namespace CloudFileServer.FileManagement
                 
                 // Update the physical directory path
                 string oldPath = metadata.DirectoryPath;
-                string newPath = Path.Combine(Path.GetDirectoryName(oldPath), newName);
+                string parentPath = Path.GetDirectoryName(oldPath);
+                string newPath = Path.Combine(parentPath, newName);
                 
                 // Handle physical path update if necessary
                 if (Path.GetFileName(oldPath) != newName)
                 {
-                    // Check if the physical directory exists
-                    if (!Directory.Exists(oldPath))
-                    {
-                        _logService.Warning($"Physical directory not found at {oldPath}");
-                        return false;
-                    }
-                    
                     // Check if the target path already exists
                     if (Directory.Exists(newPath))
                     {
@@ -318,8 +313,45 @@ namespace CloudFileServer.FileManagement
                         return false;
                     }
                     
-                    // Rename the physical directory
-                    Directory.Move(oldPath, newPath);
+                    // Create a new directory at the target path
+                    _storageService.CreateDirectory(newPath);
+                    
+                    // Move all contents from old directory to new directory
+                    string[] files = Directory.GetFiles(oldPath);
+                    foreach (string file in files)
+                    {
+                        string fileName = Path.GetFileName(file);
+                        string destFile = Path.Combine(newPath, fileName);
+                        _storageService.MoveFile(file, destFile);
+                    }
+                    
+                    // Move subdirectories recursively
+                    string[] dirs = Directory.GetDirectories(oldPath);
+                    foreach (string dir in dirs)
+                    {
+                        string dirName = Path.GetFileName(dir);
+                        string destDir = Path.Combine(newPath, dirName);
+                        Directory.CreateDirectory(destDir);
+                        
+                        // Move contents of subdirectory
+                        string[] subFiles = Directory.GetFiles(dir);
+                        foreach (string file in subFiles)
+                        {
+                            string fileName = Path.GetFileName(file);
+                            string destFile = Path.Combine(destDir, fileName);
+                            _storageService.MoveFile(file, destFile);
+                        }
+                        
+                        // Handle deeper nesting through recursion if needed
+                        string[] subDirs = Directory.GetDirectories(dir);
+                        if (subDirs.Length > 0)
+                        {
+                            _logService.Warning($"Complex nested directory structure detected during rename. Some subdirectories may need manual adjustment.");
+                        }
+                    }
+                    
+                    // Delete the old directory after moving everything
+                    _storageService.DeleteDirectory(oldPath);
                     
                     // Update the path in metadata
                     metadata.DirectoryPath = newPath;
@@ -341,7 +373,7 @@ namespace CloudFileServer.FileManagement
                 return false;
             }
         }
-
+       
         /// <summary>
         /// Deletes a directory.
         /// </summary>
@@ -403,11 +435,7 @@ namespace CloudFileServer.FileManagement
                         var subFiles = await _fileRepository.GetFilesByDirectoryId(subdir.Id, userId);
                         foreach (var file in subFiles)
                         {
-                            if (File.Exists(file.FilePath))
-                            {
-                                File.Delete(file.FilePath);
-                            }
-                            
+                            _storageService.DeleteFile(file.FilePath);
                             await _fileRepository.DeleteFileMetadata(file.Id);
                         }
                     }
@@ -415,11 +443,7 @@ namespace CloudFileServer.FileManagement
                     // Delete files in the directory itself
                     foreach (var file in files)
                     {
-                        if (File.Exists(file.FilePath))
-                        {
-                            File.Delete(file.FilePath);
-                        }
-                        
+                        _storageService.DeleteFile(file.FilePath);
                         await _fileRepository.DeleteFileMetadata(file.Id);
                     }
                     
@@ -427,12 +451,7 @@ namespace CloudFileServer.FileManagement
                     foreach (var subdir in allSubdirectories.OrderByDescending(d => d.DirectoryPath.Count(c => c == Path.DirectorySeparatorChar)))
                     {
                         await _directoryRepository.DeleteDirectoryMetadata(subdir.Id);
-                        
-                        // Delete the physical directory if it exists
-                        if (Directory.Exists(subdir.DirectoryPath))
-                        {
-                            Directory.Delete(subdir.DirectoryPath, true);
-                        }
+                        _storageService.DeleteDirectory(subdir.DirectoryPath);
                     }
                 }
                 
@@ -441,12 +460,8 @@ namespace CloudFileServer.FileManagement
                 
                 if (success)
                 {
-                    // Delete the physical directory if it exists
-                    if (Directory.Exists(metadata.DirectoryPath))
-                    {
-                        Directory.Delete(metadata.DirectoryPath, recursive);
-                    }
-                    
+                    // Delete the physical directory
+                    _storageService.DeleteDirectory(metadata.DirectoryPath, recursive);
                     _logService.Info($"Directory deleted: {metadata.Name} (ID: {directoryId})");
                 }
                 
@@ -458,6 +473,7 @@ namespace CloudFileServer.FileManagement
                 return false;
             }
         }
+        
 
         /// <summary>
         /// Moves files to a directory, updating both logical and physical organization.
@@ -498,20 +514,16 @@ namespace CloudFileServer.FileManagement
                     }
                     
                     // Ensure the physical directory exists
-                    if (!Directory.Exists(targetDir.DirectoryPath))
-                    {
-                        Directory.CreateDirectory(targetDir.DirectoryPath);
-                        _logService.Info($"Created missing physical directory: {targetDir.DirectoryPath}");
-                    }
+                    _storageService.CreateDirectory(targetDir.DirectoryPath);
                 }
                 
                 bool allSuccessful = true;
                 int successCount = 0;
                 
-                foreach (var fileId in fileIdList)
+                foreach (string fileId in fileIdList)
                 {
                     // Use the file service's MoveFileToDirectory method for each file
-                    bool moved = await _fileService.MoveFileToDirectory(fileId, targetDirectoryId, userId);
+                    bool moved = await MoveFileToDirectory(fileId, targetDirectoryId, userId);
                     
                     if (moved)
                     {
@@ -531,6 +543,123 @@ namespace CloudFileServer.FileManagement
             catch (Exception ex)
             {
                 _logService.Error($"Error moving files to directory: {ex.Message}", ex);
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Moves a file to a different directory, updating both logical and physical locations.
+        /// </summary>
+        /// <param name="fileId">The file ID.</param>
+        /// <param name="targetDirectoryId">The target directory ID, or null for root directory.</param>
+        /// <param name="userId">The user ID.</param>
+        /// <returns>True if the file was moved successfully, otherwise false.</returns>
+        public async Task<bool> MoveFileToDirectory(string fileId, string targetDirectoryId, string userId)
+        {
+            if (string.IsNullOrEmpty(fileId))
+                throw new ArgumentException("File ID cannot be empty.", nameof(fileId));
+                
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("User ID cannot be empty.", nameof(userId));
+            
+            try
+            {
+                // Get the file metadata
+                var fileMetadata = await _fileRepository.GetFileMetadataById(fileId);
+                if (fileMetadata == null)
+                {
+                    _logService.Warning($"File not found: {fileId}");
+                    return false;
+                }
+                
+                // Check if the user owns the file
+                if (fileMetadata.UserId != userId)
+                {
+                    _logService.Warning($"User {userId} attempted to move file owned by {fileMetadata.UserId}");
+                    return false;
+                }
+                
+                // If the file is already in the target directory, nothing to do
+                if ((targetDirectoryId == null && fileMetadata.DirectoryId == null) ||
+                    (fileMetadata.DirectoryId == targetDirectoryId))
+                {
+                    _logService.Debug($"File {fileId} is already in the specified directory");
+                    return true;
+                }
+                
+                // Determine the target directory path
+                string targetPath;
+                if (string.IsNullOrEmpty(targetDirectoryId))
+                {
+                    // Target is root directory
+                    targetPath = _storageService.GetUserDirectory(userId);
+                }
+                else
+                {
+                    // Target is a specific directory
+                    var targetDir = await _fileRepository.GetDirectoryById(targetDirectoryId);
+                    if (targetDir == null || targetDir.UserId != userId)
+                    {
+                        _logService.Warning($"Target directory not found or not owned by user: {targetDirectoryId}");
+                        return false;
+                    }
+                    
+                    targetPath = targetDir.DirectoryPath;
+                }
+                
+                // Get just the filename part of the current path
+                string fileName = Path.GetFileName(fileMetadata.FilePath);
+                string newFilePath = Path.Combine(targetPath, fileName);
+                
+                // If a file with the same name already exists in the target, create a unique name
+                if (new FileInfo(newFilePath).Exists && newFilePath != fileMetadata.FilePath)
+                {
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                    string extension = Path.GetExtension(fileName);
+                    string uniqueName = $"{fileNameWithoutExt}_{DateTime.Now:yyyyMMddHHmmss}{extension}";
+                    newFilePath = Path.Combine(targetPath, uniqueName);
+                }
+                
+                // Move the physical file using the storage service
+                bool moveSuccess = _storageService.MoveFile(fileMetadata.FilePath, newFilePath);
+                if (!moveSuccess && new FileInfo(fileMetadata.FilePath).Exists)
+                {
+                    _logService.Warning($"Failed to move file from {fileMetadata.FilePath} to {newFilePath}");
+                    return false;
+                }
+                
+                // Update the file metadata
+                string oldDirectoryId = fileMetadata.DirectoryId;
+                string oldFilePath = fileMetadata.FilePath;
+                
+                fileMetadata.DirectoryId = targetDirectoryId;
+                fileMetadata.FilePath = newFilePath;
+                fileMetadata.UpdatedAt = DateTime.Now;
+                
+                // Update the metadata in the repository
+                bool success = await _fileRepository.UpdateFileMetadata(fileMetadata);
+                
+                if (success)
+                {
+                    _logService.Info($"File moved: {fileId} from directory {oldDirectoryId ?? "root"} to {targetDirectoryId ?? "root"}, path updated from {oldFilePath} to {newFilePath}");
+                    return true;
+                }
+                else
+                {
+                    _logService.Error($"Failed to update metadata for file {fileId} after moving");
+                    
+                    // Try to move the file back if we moved it
+                    if (new FileInfo(newFilePath).Exists && oldFilePath != newFilePath)
+                    {
+                        _storageService.MoveFile(newFilePath, oldFilePath);
+                    }
+                    
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Error moving file to directory: {ex.Message}", ex);
                 return false;
             }
         }
@@ -592,62 +721,6 @@ namespace CloudFileServer.FileManagement
             }
             
             return directoryName;
-        }
-
-        /// <summary>
-        /// Creates a physical path for a directory that matches the logical hierarchy.
-        /// </summary>
-        /// <param name="userId">The user ID.</param>
-        /// <param name="directoryId">The directory ID.</param>
-        /// <param name="directoryName">The directory name.</param>
-        /// <param name="parentDirectoryId">The parent directory ID, or null for root directories.</param>
-        /// <returns>The physical path for the directory.</returns>
-        private async Task<string> CreatePhysicalDirectoryPath(string userId, string directoryId, string directoryName, string parentDirectoryId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(parentDirectoryId))
-                {
-                    // Root directory - place directly under user directory
-                    return Path.Combine(_storagePath, userId, directoryName);
-                }
-                else
-                {
-                    // Get the parent directory's physical path
-                    var parentDir = await _directoryRepository.GetDirectoryMetadataById(parentDirectoryId);
-                    if (parentDir == null)
-                    {
-                        throw new FileOperationException($"Parent directory {parentDirectoryId} not found");
-                    }
-            
-                    // Check if parent directory path exists
-                    if (!Directory.Exists(parentDir.DirectoryPath))
-                    {
-                        // Parent physical directory doesn't exist, create it
-                        Directory.CreateDirectory(parentDir.DirectoryPath);
-                        _logService.Info($"Created missing parent directory structure: {parentDir.DirectoryPath}");
-                    }
-            
-                    // Return the path under the parent
-                    return Path.Combine(parentDir.DirectoryPath, directoryName);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logService.Error($"Error creating physical directory path: {ex.Message}", ex);
-                throw new FileOperationException("Failed to create physical directory path", ex);
-            }
-        }
-        
-        /// <summary>
-        /// Sets the file service reference.
-        /// This is set after construction to avoid circular dependencies.
-        /// </summary>
-        /// <param name="fileService">The file service.</param>
-        public void SetFileService(FileService fileService)
-        {
-            _fileService = fileService ?? throw new ArgumentNullException(nameof(fileService));
-            _logService.Debug("FileService reference set in DirectoryService");
         }
     }
 }

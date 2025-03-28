@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudFileServer", "CloudFil
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTestScript", "ClientTestScript\ClientTestScript.csproj", "{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTestScript2", "ClientTestScript2\ClientTestScript2.csproj", "{EB9D2BA9-1C5E-4672-A0A0-B5804511F8C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientTestScript3", "ClientTestScript3\ClientTestScript3.csproj", "{ED984942-FD45-41F7-B436-854BAB4C8A93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8F19A9D-1DF4-439A-9214-A55FAF8BA84C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB9D2BA9-1C5E-4672-A0A0-B5804511F8C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB9D2BA9-1C5E-4672-A0A0-B5804511F8C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB9D2BA9-1C5E-4672-A0A0-B5804511F8C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB9D2BA9-1C5E-4672-A0A0-B5804511F8C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED984942-FD45-41F7-B436-854BAB4C8A93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED984942-FD45-41F7-B436-854BAB4C8A93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED984942-FD45-41F7-B436-854BAB4C8A93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED984942-FD45-41F7-B436-854BAB4C8A93}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
