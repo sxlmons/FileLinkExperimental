@@ -33,10 +33,10 @@ namespace CloudFileServerClient
                 Console.WriteLine("Connected to server");
 
                 // Create account
-                await CreateAccount("testuser", "password12345", "test@example.com");
+                await CreateAccount("testuser", "password123", "test@example.com");
 
                 // Login
-                await Login("testuser", "password12345");
+                await Login("testuser", "password123");
 
                 // Create a directory
                 string directoryId = await CreateDirectory("My Test Directory");
