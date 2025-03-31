@@ -84,12 +84,12 @@ namespace CloudFileServer.FileManagement
         /// Initializes a new instance of the FileMetadata class with the specified parameters.
         /// </summary>
         /// <param name="userId">The ID of the user who owns the file.</param>
+        /// <param name="directoryId"></param>
         /// <param name="fileName">The name of the file.</param>
         /// <param name="fileSize">The size of the file in bytes.</param>
         /// <param name="contentType">The content type of the file.</param>
         /// <param name="filePath">The path where the file is stored.</param>
-        public FileMetadata(string userId, string fileName, long fileSize, string contentType, string filePath)
-            : this()
+        public FileMetadata(string userId, string fileName, long fileSize, string contentType, string filePath) : this()
         {
             UserId = userId;
             FileName = fileName;

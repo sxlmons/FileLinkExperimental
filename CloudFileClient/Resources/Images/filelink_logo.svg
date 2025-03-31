@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <!-- Background shape - subtle gradient -->
+  <rect width="500" height="500" rx="0" fill="url(#bgGradient)" />
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f0f2f5" />
+    </linearGradient>
+    
+    <!-- Shadow for documents -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="3" dy="3" stdDeviation="4" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  
+  <!-- Right document (positioned slightly down and behind) -->
+  <g transform="translate(230, 130)" filter="url(#shadow)">
+    <path d="M0,30 C0,15 15,0 30,0 L100,0 L150,50 L150,220 C150,235 135,250 120,250 L30,250 C15,250 0,235 0,220 Z" fill="#5d4fa0" />
+    <path d="M100,0 L100,50 L150,50 Z" fill="#4a3e80" />
+    <!-- Document lines -->
+    <path d="M30,80 L120,80 M30,120 L120,120 M30,160 L120,160 M30,200 L90,200" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3" />
+  </g>
+  
+  <!-- Left document (positioned slightly up and in front) -->
+  <g transform="translate(120, 80)" filter="url(#shadow)">
+    <path d="M0,30 C0,15 15,0 30,0 L100,0 L150,50 L150,220 C150,235 135,250 120,250 L30,250 C15,250 0,235 0,220 Z" fill="#3B2D79" />
+    <path d="M100,0 L100,50 L150,50 Z" fill="#2a1f58" />
+    <!-- Document lines -->
+    <path d="M30,80 L120,80 M30,120 L120,120 M30,160 L120,160 M30,200 L90,200" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3" />
+  </g>
+  
+  <!-- Company name with subtle shadow - moved down -->
+  <g transform="translate(250, 420)">
+    <text font-family="Montserrat, Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle" fill="#3B2D79" filter="url(#shadow)">FileLink</text>
+  </g>
+
+  <!-- Tagline - also moved down -->
+  <text font-family="Montserrat, Arial, sans-serif" font-size="16" font-weight="500" text-anchor="middle" x="250" y="450" fill="#666">Connect • Share • Collaborate</text>
+</svg>

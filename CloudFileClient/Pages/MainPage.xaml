@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CloudFileClient.Pages.MainPage"
+             Title="Cloud File Client">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Spacing="25"
+            Padding="30"
+            VerticalOptions="Center">
+
+            <Image
+                Source="dotnet_bot.png"
+                SemanticProperties.Description="The .NET MAUI Dotnet Bot mascot"
+                HeightRequest="100"
+                HorizontalOptions="Center" />
+
+            <Label
+                x:Name="WelcomeLabel"
+                Text="Welcome to Cloud File Client"
+                SemanticProperties.HeadingLevel="Level1"
+                FontSize="32"
+                HorizontalOptions="Center" />
+
+            <Label
+                x:Name="UserInfoLabel"
+                SemanticProperties.HeadingLevel="Level2"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="You are currently logged in."
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="LogoutButton"
+                Text="Logout"
+                SemanticProperties.Hint="Logs you out and returns to the login page"
+                Clicked="LogoutButton_Clicked"
+                HorizontalOptions="Center" />
+
+            <Label 
+                x:Name="StatusLabel"
+                Text=""
+                HorizontalOptions="Center"
+                IsVisible="False" />
+
+            <ActivityIndicator 
+                x:Name="ActivitySpinner"
+                IsRunning="false"
+                IsVisible="false"
+                HorizontalOptions="Center" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -70,7 +70,6 @@ namespace CloudFileServer
                 
                 // FileRepository now depends on DirectoryRepository
                 _fileRepository = new FileRepository(Configuration.FileMetadataPath, Configuration.FileStoragePath, _directoryRepository, _logService);
-                    
                 _userRepository = new UserRepository(Configuration.UsersDataPath, _logService);
 
                 // Initialize authentication service
@@ -78,7 +77,6 @@ namespace CloudFileServer
 
                 // Initialize directory and file services with PhysicalStorageService
                 _directoryService = new DirectoryService(_directoryRepository, _fileRepository, storageService, _logService);
-                    
                 _fileService = new FileService(_fileRepository, storageService, _logService, Configuration.ChunkSize);
 
                 // Initialize client session management

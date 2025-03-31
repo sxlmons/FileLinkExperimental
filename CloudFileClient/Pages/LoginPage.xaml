@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CloudFileClient.Pages.LoginPage"
+             BackgroundColor="#f4f6fc"
+             Title="CloudFile">
+
+    <Grid>
+        <!-- Background design with accent color -->
+        <BoxView Color="#3B2D79" 
+                 HorizontalOptions="Fill"
+                 VerticalOptions="Start"
+                 HeightRequest="220" />
+
+        <ScrollView Margin="0,20,0,0">
+            <VerticalStackLayout Spacing="0" Padding="0" VerticalOptions="FillAndExpand">
+                
+                <!-- App Title (Emphasized) -->
+                <Label Text="CloudFile"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       FontSize="48"
+                       HorizontalOptions="Center"
+                       Margin="0,60,0,20" />
+
+                <!-- Tagline -->
+                <Label Text="Secure Cloud Storage"
+                       FontSize="18"
+                       TextColor="White"
+                       Opacity="0.9"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,30" />
+
+                <!-- Main Content Frame -->
+                <Frame Margin="20,10,20,20" 
+                       Padding="20" 
+                       CornerRadius="10" 
+                       HasShadow="True"
+                       BorderColor="Transparent"
+                       BackgroundColor="White"
+                       VerticalOptions="Center">
+                    
+                    <!-- Using a Grid as the single content element for the Frame -->
+                    <Grid>
+                        <!-- Login Form (Initially Visible) -->
+                        <VerticalStackLayout x:Name="LoginPanel" 
+                                             Spacing="15" 
+                                             Padding="10" 
+                                             IsVisible="true">
+                            
+                            <Label Text="Sign In"
+                                   FontSize="24" 
+                                   FontAttributes="Bold"
+                                   TextColor="#3B2D79"
+                                   HorizontalOptions="Center" />
+                            
+                            <Label Text="Welcome back! Please login to your account"
+                                   FontSize="14"
+                                   TextColor="#666"
+                                   HorizontalOptions="Center"
+                                   Margin="0,0,0,10" />
+                            
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9"
+                                    Margin="0,5">
+                                <Entry x:Name="UsernameEntry"
+                                       Placeholder="Username"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9"
+                                    Margin="0,5">
+                                <Entry x:Name="PasswordEntry"
+                                       Placeholder="Password"
+                                       PlaceholderColor="#AAAAAA"
+                                       IsPassword="True"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Button x:Name="LoginButton"
+                                    Text="SIGN IN"
+                                    BackgroundColor="#3B2D79"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    CornerRadius="8"
+                                    Margin="0,10"
+                                    HeightRequest="50"
+                                    Clicked="LoginButton_Clicked" />
+                            
+                            <Label Text="Don't have an account?"
+                                   TextColor="#666"
+                                   HorizontalOptions="Center"
+                                   FontSize="14" />
+                            
+                            <Button x:Name="CreateAccountButton"
+                                    Text="CREATE ACCOUNT"
+                                    BackgroundColor="Transparent"
+                                    TextColor="#3B2D79"
+                                    FontAttributes="Bold"
+                                    BorderColor="#3B2D79"
+                                    BorderWidth="1"
+                                    CornerRadius="8"
+                                    Margin="0,5"
+                                    HeightRequest="50"
+                                    Clicked="CreateAccountButton_Clicked" />
+                        </VerticalStackLayout>
+                        
+                        <!-- Account Creation Panel (Initially Hidden) -->
+                        <VerticalStackLayout x:Name="CreateAccountPanel" 
+                                             Spacing="15" 
+                                             Padding="10" 
+                                             IsVisible="false">
+                            
+                            <Label Text="Create New Account"
+                                   FontSize="24" 
+                                   FontAttributes="Bold"
+                                   TextColor="#3B2D79"
+                                   HorizontalOptions="Center" />
+                            
+                            <Label Text="Fill in the information to register"
+                                   FontSize="14"
+                                   TextColor="#666"
+                                   HorizontalOptions="Center"
+                                   Margin="0,0,0,10" />
+                            
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9">
+                                <Entry x:Name="NewUsernameEntry"
+                                       Placeholder="Username"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9">
+                                <Entry x:Name="NewPasswordEntry"
+                                       Placeholder="Password"
+                                       IsPassword="True"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9">
+                                <Entry x:Name="EmailEntry"
+                                       Placeholder="Email (Optional)"
+                                       Keyboard="Email"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Button x:Name="SubmitAccountButton"
+                                    Text="CREATE ACCOUNT"
+                                    BackgroundColor="#3B2D79"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    CornerRadius="8"
+                                    Margin="0,10"
+                                    HeightRequest="50"
+                                    Clicked="SubmitAccountButton_Clicked" />
+                            
+                            <Button x:Name="CancelButton"
+                                    Text="BACK TO LOGIN"
+                                    BackgroundColor="Transparent"
+                                    TextColor="#666"
+                                    FontAttributes="Bold"
+                                    BorderColor="#CCC"
+                                    BorderWidth="1"
+                                    CornerRadius="8"
+                                    Margin="0,5"
+                                    HeightRequest="40"
+                                    Clicked="CancelButton_Clicked" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Frame>
+
+                <!-- Server Settings (Collapsible) -->
+                <Frame Margin="20,0,20,20" 
+                       Padding="5" 
+                       CornerRadius="10" 
+                       HasShadow="True"
+                       BorderColor="Transparent"
+                       BackgroundColor="White">
+                    
+                    <VerticalStackLayout>
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Server Settings" 
+                                   FontSize="16" 
+                                   TextColor="#3B2D79"
+                                   Margin="15"
+                                   Grid.Column="0" />
+                            
+                            <Button x:Name="ToggleSettingsButton"
+                                    Text="▼"
+                                    BackgroundColor="Transparent"
+                                    TextColor="#3B2D79"
+                                    BorderWidth="0"
+                                    FontSize="18"
+                                    Clicked="ToggleSettingsButton_Clicked"
+                                    Grid.Column="1" />
+                        </Grid>
+
+                        <VerticalStackLayout x:Name="ServerSettingsPanel" 
+                                             IsVisible="false" 
+                                             Padding="15,0,15,15" 
+                                             Spacing="10">
+                            
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9">
+                                <Entry x:Name="ServerAddressEntry"
+                                       Placeholder="Server Address"
+                                       Text="localhost"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Border Stroke="#E0E0E0"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="15,0"
+                                    BackgroundColor="#F9F9F9">
+                                <Entry x:Name="ServerPortEntry"
+                                       Placeholder="Server Port"
+                                       Text="9000"
+                                       Keyboard="Numeric"
+                                       PlaceholderColor="#AAAAAA"
+                                       BackgroundColor="Transparent"
+                                       TextColor="#333333" />
+                            </Border>
+
+                            <Button x:Name="SaveSettingsButton"
+                                    Text="SAVE SETTINGS"
+                                    BackgroundColor="#4C3B8A"
+                                    TextColor="White"
+                                    FontAttributes="Bold"
+                                    CornerRadius="8"
+                                    Margin="0,5"
+                                    HeightRequest="40"
+                                    Clicked="SaveSettingsButton_Clicked" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Loading Indicator and Status -->
+                <ActivityIndicator x:Name="ActivitySpinner"
+                                   IsRunning="false"
+                                   IsVisible="false"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   Color="#3B2D79"
+                                   HeightRequest="50"
+                                   WidthRequest="50" />
+                
+                <Label x:Name="StatusLabel"
+                       Text=""
+                       HorizontalOptions="Center"
+                       IsVisible="false"
+                       TextColor="#3B2D79"
+                       Margin="0,5" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

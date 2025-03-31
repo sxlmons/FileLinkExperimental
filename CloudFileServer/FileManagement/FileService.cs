@@ -106,7 +106,6 @@ namespace CloudFileServer.FileManagement
                     TotalChunks = CalculateTotalChunks(fileSize),
                     ChunksReceived = 0,
                     IsComplete = false,
-                    DirectoryId = directoryId
                 };
                 
                 // Create an empty file
