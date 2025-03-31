@@ -17,11 +17,13 @@ namespace CloudFileClient
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 })
-                .UseSkiaSharp(); // Add this line
+                .UseSkiaSharp();
             
             // Register services
             builder.Services.AddSingleton<NetworkService>();
             builder.Services.AddSingleton<AuthenticationService>();
+            builder.Services.AddSingleton<FileService>();
+            builder.Services.AddSingleton<DirectoryService>();
 
             // Register pages
             builder.Services.AddTransient<LoginPage>();
