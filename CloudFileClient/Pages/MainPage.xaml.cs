@@ -72,25 +72,6 @@ namespace CloudFileClient.Pages
             // Update UI with current user's information
             UserNameLabel.Text = $"Welcome, {_authService.CurrentUser?.Username}";
 
-            // Make sure the section headers are always visible
-            DirectoriesCollection.Header = new Label
-            {
-                Text = "Folders",
-                FontSize = 18,
-                TextColor = Color.FromHex("#333"),
-                FontAttributes = FontAttributes.Bold,
-                Margin = new Thickness(10, 10, 0, 5)
-            };
-
-            FilesCollection.Header = new Label
-            {
-                Text = "Files",
-                FontSize = 18,
-                TextColor = Color.FromHex("#333"),
-                FontAttributes = FontAttributes.Bold,
-                Margin = new Thickness(10, 10, 0, 5)
-            };
-
             // Load the root directory contents
             await LoadDirectoryContents(null);
         }
@@ -111,8 +92,8 @@ namespace CloudFileClient.Pages
                 // Update back button state
                 BackButton.IsEnabled = directoryId != null;
 
-                // Update the path label
-                UpdatePathLabel();
+                // Update the breadcrumb navigation
+                UpdateBreadcrumb();
 
                 // Get directory contents
                 var (files, directories) = await _directoryService.GetDirectoryContentsAsync(
@@ -205,13 +186,23 @@ namespace CloudFileClient.Pages
                 // Add current directory to navigation history
                 if (_currentDirectoryId != null || _navigationHistory.Count == 0)
                 {
-                    string currentName = PathLabel.Text.Split('/').LastOrDefault() ?? "Home";
+                    string currentName = GetCurrentDirectoryName();
                     _navigationHistory.Push((_currentDirectoryId, currentName));
                 }
 
                 // Navigate to the selected directory
                 await LoadDirectoryContents(selectedDirectory.Id);
             }
+        }
+
+        private string GetCurrentDirectoryName()
+        {
+            if (_currentDirectoryId == null)
+                return "Home";
+
+            // Try to find the directory name in the current list
+            var directory = Directories.FirstOrDefault(d => d.Id == _currentDirectoryId);
+            return directory?.Name ?? "Directory";
         }
 
         private async void FilesCollection_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -223,7 +214,7 @@ namespace CloudFileClient.Pages
 
                 // Show file options
                 string action = await DisplayActionSheet(
-                    $"{selectedFile.FileName}",
+                    selectedFile.FileName,
                     "Cancel",
                     "Delete",
                     "Download", "View Details");
@@ -314,17 +305,12 @@ namespace CloudFileClient.Pages
 
         private async Task<string?> GetDownloadFolderPath()
         {
-            // On Android, use the Downloads folder
-            //if (DeviceInfo.Platform == DevicePlatform.Android)
-            // {
-            //return Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).AbsolutePath;
-            // }
             // On iOS, use the Documents folder
             if (DeviceInfo.Platform == DevicePlatform.iOS)
             {
                 return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Downloads");
             }
-            // On Windows, let the user choose a folder
+            // On Windows, use the Downloads folder
             else if (DeviceInfo.Platform == DevicePlatform.WinUI)
             {
                 // Use the Downloads folder for simplicity in this example
@@ -338,7 +324,7 @@ namespace CloudFileClient.Pages
         }
 
         private async Task DeleteFile(FileItem file)
-            {
+        {
             if (!_authService.IsLoggedIn || _authService.CurrentUser == null)
                 return;
 
@@ -440,7 +426,7 @@ namespace CloudFileClient.Pages
 
             try
             {
-                // Use MediaPicker instead of FilePicker
+                // Use MediaPicker
                 var result = await MediaPicker.PickPhotoAsync(new MediaPickerOptions
                 {
                     Title = "Select a file to upload"
@@ -497,28 +483,107 @@ namespace CloudFileClient.Pages
             }
         }
 
-        private void UpdatePathLabel()
+        private void UpdateBreadcrumb()
         {
-            // Start with Home
-            string path = "Home";
-
-            // Add the path segments from navigation history
-            foreach (var entry in _navigationHistory.Reverse())
+            // Clear existing breadcrumb
+            BreadcrumbContainer.Clear();
+            
+            // Add home item
+            var homeLabel = new Label
             {
-                path += $"/{entry.Name}";
+                Text = "Home",
+                TextColor = Color.Parse("#0969da"),
+                FontFamily = "InterMedium",
+                VerticalOptions = LayoutOptions.Center,
+                FontSize = 14
+            };
+            
+            var homeGesture = new TapGestureRecognizer();
+            homeGesture.Tapped += async (s, e) => {
+                // Clear navigation history and go to root
+                _navigationHistory.Clear();
+                await LoadDirectoryContents(null);
+            };
+            homeLabel.GestureRecognizers.Add(homeGesture);
+            
+            BreadcrumbContainer.Add(homeLabel);
+            
+            // Add separator if we have navigation history
+            if (_navigationHistory.Count > 0 || _currentDirectoryId != null)
+            {
+                BreadcrumbContainer.Add(new Label
+                {
+                    Text = "/",
+                    TextColor = Color.Parse("#57606a"),
+                    FontFamily = "InterRegular",
+                    VerticalOptions = LayoutOptions.Center,
+                    FontSize = 14,
+                    Margin = new Thickness(4, 0)
+                });
             }
-
-            // Add current directory name if navigating to a specific directory
+            
+            // Add navigation history items
+            int index = 0;
+            var historyItems = _navigationHistory.Reverse().ToList();
+            
+            foreach (var (dirId, dirName) in historyItems)
+            {
+                var dirLabel = new Label
+                {
+                    Text = dirName,
+                    TextColor = Color.Parse("#0969da"),
+                    FontFamily = "InterMedium",
+                    VerticalOptions = LayoutOptions.Center,
+                    FontSize = 14
+                };
+                
+                // Store a copy of the index and dirId for the gesture
+                int capturedIndex = index;
+                string? capturedDirId = dirId;
+                
+                var dirGesture = new TapGestureRecognizer();
+                dirGesture.Tapped += async (s, e) => {
+                    // Navigate to this directory by removing items from history
+                    for (int i = 0; i < historyItems.Count - capturedIndex; i++)
+                    {
+                        _navigationHistory.Pop();
+                    }
+                    await LoadDirectoryContents(capturedDirId);
+                };
+                dirLabel.GestureRecognizers.Add(dirGesture);
+                
+                BreadcrumbContainer.Add(dirLabel);
+                
+                // Add separator if not the last item
+                if (index < historyItems.Count - 1 || _currentDirectoryId != null)
+                {
+                    BreadcrumbContainer.Add(new Label
+                    {
+                        Text = "/",
+                        TextColor = Color.Parse("#57606a"),
+                        FontFamily = "InterRegular",
+                        VerticalOptions = LayoutOptions.Center,
+                        FontSize = 14,
+                        Margin = new Thickness(4, 0)
+                    });
+                }
+                
+                index++;
+            }
+            
+            // Add current directory if we're not at root
             if (_currentDirectoryId != null)
             {
-                string? currentName = Directories.FirstOrDefault(d => d.Id == _currentDirectoryId)?.Name;
-                if (!string.IsNullOrEmpty(currentName))
+                string currentName = GetCurrentDirectoryName();
+                BreadcrumbContainer.Add(new Label
                 {
-                    path += $"/{currentName}";
-                }
+                    Text = currentName,
+                    TextColor = Color.Parse("#24292f"),
+                    FontFamily = "InterMedium",
+                    VerticalOptions = LayoutOptions.Center,
+                    FontSize = 14
+                });
             }
-
-            PathLabel.Text = path;
         }
 
         // INotifyPropertyChanged implementation

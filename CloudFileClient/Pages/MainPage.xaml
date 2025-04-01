@@ -2,291 +2,347 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CloudFileClient.Pages.MainPage"
-             Title="CloudFile"
-             BackgroundColor="#f4f6fc">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#f6f8fa">
 
-    <Grid RowDefinitions="Auto, Auto, *">
-
-        <!-- Header with user info and logout button -->
-        <Grid Grid.Row="0" BackgroundColor="#3B2D79" Padding="20,25,20,25">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Top bar with app title and user info -->
+        <Grid Grid.Row="0" Padding="16" BackgroundColor="#0d1117">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Label Text="CloudFile" 
-                   Grid.Column="0"
-                   TextColor="White" 
-                   FontSize="24" 
-                   FontAttributes="Bold"
-                   VerticalOptions="Center" />
+            <HorizontalStackLayout Grid.Column="0" Spacing="12" VerticalOptions="Center">
+                <Label Text="CloudFile" 
+                       TextColor="White" 
+                       FontSize="20" 
+                       FontFamily="InterSemiBold"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
 
             <Label x:Name="UserNameLabel" 
                    Grid.Column="1"
-                   Text="Welcome, User" 
-                   TextColor="White" 
-                   FontSize="16"
-                   Margin="20,0,0,0"
-                   HorizontalOptions="Start"
-                   VerticalOptions="Center" />
+                   Text="Welcome" 
+                   TextColor="#e6edf3" 
+                   FontSize="14"
+                   FontFamily="InterRegular"
+                   VerticalOptions="Center"
+                   HorizontalOptions="End" 
+                   Margin="0,0,16,0" />
 
             <Button x:Name="LogoutButton" 
                     Grid.Column="2"
                     Text="Logout" 
-                    BackgroundColor="#4C3B8A"
-                    TextColor="White"
-                    Clicked="LogoutButton_Clicked"
-                    CornerRadius="8"
-                    Padding="15,5" />
+                    FontFamily="InterMedium"
+                    BackgroundColor="#21262d"
+                    TextColor="#e6edf3"
+                    BorderColor="#30363d"
+                    BorderWidth="1"
+                    CornerRadius="6"
+                    HeightRequest="32"
+                    FontSize="13"
+                    Padding="12,0"
+                    Clicked="LogoutButton_Clicked" />
         </Grid>
 
-        <!-- Directory navigation and path display -->
-        <Grid Grid.Row="1" Padding="20,15" BackgroundColor="White">
+        <!-- Breadcrumb and navigation -->
+        <Grid Grid.Row="1" Padding="16,8" BackgroundColor="White" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Back button -->
             <Button x:Name="BackButton"
                     Grid.Column="0"
                     Text="↑ Back"
-                    BackgroundColor="#F0F0F0"
-                    TextColor="#333"
+                    FontFamily="InterMedium"
+                    TextColor="#24292f"
+                    BackgroundColor="#f6f8fa"
+                    BorderColor="#d0d7de"
+                    BorderWidth="1"
+                    CornerRadius="6"
+                    HeightRequest="32"
+                    Padding="12,0"
+                    FontSize="13"
                     Clicked="BackButton_Clicked"
-                    IsEnabled="False"
-                    CornerRadius="8"
-                    Padding="15,8" />
+                    IsEnabled="False" />
 
-            <!-- Current path display -->
-            <Label x:Name="PathLabel"
-                   Grid.Column="1"
-                   Text="Home"
-                   TextColor="#333"
-                   FontSize="16"
-                   VerticalOptions="Center"
-                   Margin="15,0" />
+            <ScrollView Grid.Column="1" Orientation="Horizontal" HorizontalOptions="Start">
+                <HorizontalStackLayout x:Name="BreadcrumbContainer" 
+                                       Spacing="4" 
+                                       Margin="8,0">
+                    <Label Text="Home" 
+                           TextColor="#0969da" 
+                           FontFamily="InterMedium"
+                           VerticalOptions="Center"
+                           FontSize="14" />
+                </HorizontalStackLayout>
+            </ScrollView>
 
-            <!-- Refresh button -->
             <Button x:Name="RefreshButton"
                     Grid.Column="2"
-                    Text="Refresh"
-                    BackgroundColor="#F0F0F0"
-                    TextColor="#333"
-                    Clicked="RefreshButton_Clicked"
-                    CornerRadius="8"
-                    Padding="15,8" />
+                    Text="↻ Refresh"
+                    FontFamily="InterMedium"
+                    TextColor="#24292f"
+                    BackgroundColor="#f6f8fa"
+                    BorderColor="#d0d7de"
+                    BorderWidth="1"
+                    CornerRadius="6"
+                    HeightRequest="32"
+                    Padding="12,0"
+                    FontSize="13"
+                    Clicked="RefreshButton_Clicked" />
         </Grid>
 
-        <!-- Main content area for files and directories -->
-        <Grid Grid.Row="2" Padding="10">
+        <!-- Main content area -->
+        <Grid Grid.Row="2">
             <ScrollView>
-                <VerticalStackLayout>
-                    <!-- Activity indicator and status label -->
-                    <Grid IsVisible="False" x:Name="LoadingGrid">
-                        <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center">
-                            <ActivityIndicator x:Name="ActivitySpinner"
-                                             IsRunning="False"
-                                             Color="#3B2D79"
-                                             HeightRequest="50"
-                                             WidthRequest="50" />
-                            
-                            <Label x:Name="StatusLabel"
-                                   Text="Loading..."
-                                   TextColor="#3B2D79"
-                                   HorizontalOptions="Center"
-                                   Margin="0,10" />
-                        </VerticalStackLayout>
+                <VerticalStackLayout Padding="16" Spacing="16">
+                    <!-- Action buttons -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <!-- Create folder button -->
+                        <Border Grid.Column="0"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="#0969da"
+                                StrokeThickness="0">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="CreateDirectoryFrame_Tapped" />
+                            </Border.GestureRecognizers>
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <Image Grid.Column="0"
+                                       Source="folder_add.png"
+                                       HeightRequest="24"
+                                       WidthRequest="24"
+                                       VerticalOptions="Center" />
+                                
+                                <Label Grid.Column="1"
+                                       Text="New Folder"
+                                       TextColor="White"
+                                       FontFamily="InterMedium"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Start"
+                                       Margin="12,0,0,0" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Upload file button -->
+                        <Border Grid.Column="1"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="#2ea043"
+                                StrokeThickness="0">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="UploadFileFrame_Tapped" />
+                            </Border.GestureRecognizers>
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                
+                                <Image Grid.Column="0"
+                                       Source="upload.png"
+                                       HeightRequest="24"
+                                       WidthRequest="24"
+                                       VerticalOptions="Center" />
+                                
+                                <Label Grid.Column="1"
+                                       Text="Upload File"
+                                       TextColor="White"
+                                       FontFamily="InterMedium"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="Start"
+                                       Margin="12,0,0,0" />
+                            </Grid>
+                        </Border>
                     </Grid>
 
+                    <!-- Directories section -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Folders"
+                               FontFamily="InterSemiBold"
+                               TextColor="#24292f"
+                               FontSize="16"
+                               Margin="4,0" />
+
+                        <CollectionView x:Name="DirectoriesCollection"
+                                        ItemsSource="{Binding Directories}"
+                                        SelectionMode="Single"
+                                        SelectionChanged="DirectoriesCollection_SelectionChanged"
+                                        EmptyView="No folders found"
+                                        HeightRequest="240"
+                                        Margin="0,8">
+                            <CollectionView.ItemsLayout>
+                                <GridItemsLayout Orientation="Vertical"
+                                                Span="2"
+                                                HorizontalItemSpacing="12"
+                                                VerticalItemSpacing="12" />
+                            </CollectionView.ItemsLayout>
+                        
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border StrokeShape="RoundRectangle 8"
+                                            BackgroundColor="White"
+                                            Stroke="#d0d7de"
+                                            StrokeThickness="1">
+                                        <Grid Padding="16,12" RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*">
+                                            <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                                                   Source="folder.png"
+                                                   HeightRequest="32"
+                                                   WidthRequest="32"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,16,0" />
+                                        
+                                            <Label Grid.Row="0" Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   FontFamily="InterMedium"
+                                                   TextColor="#24292f"
+                                                   FontSize="14"
+                                                   LineBreakMode="TailTruncation" />
+                                        
+                                            <Label Grid.Row="1" Grid.Column="1"
+                                                   Text="{Binding CreatedAt, StringFormat='Created {0:MMM dd, yyyy}'}"
+                                                   FontFamily="InterRegular"
+                                                   FontSize="12"
+                                                   TextColor="#57606a"
+                                                   Margin="0,4,0,0" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <!-- Files section -->
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Files"
+                               FontFamily="InterSemiBold"
+                               TextColor="#24292f"
+                               FontSize="16"
+                               Margin="4,0" />
+
+                        <CollectionView x:Name="FilesCollection"
+                                        ItemsSource="{Binding Files}"
+                                        SelectionMode="Single"
+                                        SelectionChanged="FilesCollection_SelectionChanged"
+                                        EmptyView="No files found"
+                                        Margin="0,8">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border StrokeShape="RoundRectangle 8"
+                                            BackgroundColor="White"
+                                            Stroke="#d0d7de"
+                                            StrokeThickness="1"
+                                            Margin="0,0,0,12">
+                                        <Grid Padding="16,12" ColumnDefinitions="Auto,*,Auto">
+                                            <!-- File icon -->
+                                            <Image Grid.Column="0"
+                                                   Source="{Binding FileTypeIcon}"
+                                                   HeightRequest="32"
+                                                   WidthRequest="32"
+                                                   VerticalOptions="Center"
+                                                   Margin="0,0,16,0" />
+                                            
+                                            <!-- File info -->
+                                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                                <Label Text="{Binding FileName}"
+                                                       FontFamily="InterMedium"
+                                                       TextColor="#24292f"
+                                                       FontSize="14"
+                                                       LineBreakMode="TailTruncation" />
+                                                
+                                                <HorizontalStackLayout Spacing="12">
+                                                    <Label Text="{Binding FormattedSize}"
+                                                           FontFamily="InterRegular"
+                                                           TextColor="#57606a"
+                                                           FontSize="12" />
+                                                    
+                                                    <Label Text="{Binding UpdatedAt, StringFormat='Modified {0:MMM dd, yyyy}'}"
+                                                           FontFamily="InterRegular"
+                                                           TextColor="#57606a"
+                                                           FontSize="12" />
+                                                </HorizontalStackLayout>
+                                            </VerticalStackLayout>
+                                            
+                                            <!-- Download button -->
+                                            <Button Grid.Column="2"
+                                                    Text="Download"
+                                                    FontFamily="InterMedium"
+                                                    BackgroundColor="#f6f8fa"
+                                                    TextColor="#24292f"
+                                                    BorderColor="#d0d7de"
+                                                    BorderWidth="1"
+                                                    CornerRadius="6"
+                                                    HeightRequest="32"
+                                                    Padding="12,0"
+                                                    FontSize="13"
+                                                    VerticalOptions="Center"
+                                                    CommandParameter="{Binding Id}"
+                                                    Clicked="DownloadButton_Clicked" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
                     <!-- Empty state message -->
-                    <VerticalStackLayout x:Name="EmptyStateLayout" 
+                    <VerticalStackLayout x:Name="EmptyStateLayout"
                                          IsVisible="False"
-                                         VerticalOptions="Center"
                                          HorizontalOptions="Center"
-                                         Margin="0,50">
-                        <Image Source="folder_empty.png"
-                               HeightRequest="100"
-                               WidthRequest="100"
+                                         VerticalOptions="Center"
+                                         Margin="0,40">
+                        <Image Source="empty_folder.png"
+                               HeightRequest="80"
+                               WidthRequest="80"
                                HorizontalOptions="Center" />
                         
                         <Label Text="This folder is empty"
-                               FontSize="20"
-                               TextColor="#666"
+                               FontFamily="InterMedium"
+                               TextColor="#24292f"
+                               FontSize="18"
                                HorizontalOptions="Center"
-                               Margin="0,20" />
+                               Margin="0,24,0,8" />
                         
                         <Label Text="Upload files or create folders to get started"
-                               FontSize="16"
-                               TextColor="#888"
+                               FontFamily="InterRegular"
+                               TextColor="#57606a"
+                               FontSize="14"
                                HorizontalOptions="Center" />
                     </VerticalStackLayout>
-                    
-                    <!-- Create Directory Button -->
-                    <Frame Grid.Column="0"
-                           BackgroundColor="#3B2D79"
-                           BorderColor="Transparent"
-                           CornerRadius="10"
-                           HasShadow="True"
-                           Padding="15"
-                           Margin="5">
-                        <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="CreateDirectoryFrame_Tapped" />
-                        </Frame.GestureRecognizers>
-                        <VerticalStackLayout HorizontalOptions="Center">
-                            <Image Source="add_folder_icon.png"
-                                   HeightRequest="32"
-                                   WidthRequest="32"
-                                   HorizontalOptions="Center" />
-        
-                            <Label Text="Create Folder"
-                                   TextColor="White"
-                                   FontSize="14"
-                                   FontAttributes="Bold"
-                                   HorizontalOptions="Center"
-                                   Margin="0,8,0,0" />
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <!-- Upload File Button -->
-                    <Frame Grid.Column="1"
-                           BackgroundColor="#4C3B8A"
-                           BorderColor="Transparent"
-                           CornerRadius="10"
-                           HasShadow="True"
-                           Padding="15"
-                           Margin="5">
-                        <Frame.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="UploadFileFrame_Tapped" />
-                        </Frame.GestureRecognizers>
-                        <VerticalStackLayout HorizontalOptions="Center">
-                            <Image Source="upload_icon.png"
-                                   HeightRequest="32"
-                                   WidthRequest="32"
-                                   HorizontalOptions="Center" />
-        
-                            <Label Text="Upload File"
-                                   TextColor="White"
-                                   FontSize="14"
-                                   FontAttributes="Bold"
-                                   HorizontalOptions="Center"
-                                   Margin="0,8,0,0" />
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <!-- Collection of directories -->
-                    <Label Text="Folders"
-                           FontSize="18"
-                           TextColor="#333"
-                           FontAttributes="Bold"
-                           Margin="10,10,0,5" />
-                    
-                    <CollectionView x:Name="DirectoriesCollection"
-                                  ItemsSource="{Binding Directories}"
-                                  SelectionMode="Single"
-                                  SelectionChanged="DirectoriesCollection_SelectionChanged"
-                                  EmptyView="No folders found."
-                                  HeightRequest="150"
-                                  Margin="0,0,0,10">
-                        <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Vertical"
-                                             Span="2"
-                                             HorizontalItemSpacing="10"
-                                             VerticalItemSpacing="10" />
-                        </CollectionView.ItemsLayout>
-                        
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame BackgroundColor="White"
-                                       BorderColor="#EEE"
-                                       CornerRadius="10"
-                                       Padding="15">
-                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*">
-                                        <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
-                                               Source="folder_icon.png"
-                                               HeightRequest="40"
-                                               WidthRequest="40"
-                                               VerticalOptions="Center"
-                                               Margin="0,0,10,0" />
-                                        
-                                        <Label Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding Name}"
-                                               FontSize="16"
-                                               TextColor="#333"
-                                               LineBreakMode="TailTruncation" />
-                                        
-                                        <Label Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding CreatedAt, StringFormat='{0:MMM dd, yyyy}'}"
-                                               FontSize="12"
-                                               TextColor="#888" />
-                                    </Grid>
-                                </Frame>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
-
-                    <!-- Files section -->
-                    <Label Text="Files"
-                           FontSize="18"
-                           TextColor="#333"
-                           FontAttributes="Bold"
-                           Margin="10,10,0,5" />
-                    
-                    <CollectionView x:Name="FilesCollection"
-                                  ItemsSource="{Binding Files}"
-                                  SelectionMode="Single"
-                                  SelectionChanged="FilesCollection_SelectionChanged"
-                                  EmptyView="No files found."
-                                  HeightRequest="300"
-                                  Margin="0,0,0,20">
-                        <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical"
-                                             ItemSpacing="10" />
-                        </CollectionView.ItemsLayout>
-                        
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame BackgroundColor="White"
-                                       BorderColor="#EEE"
-                                       CornerRadius="10"
-                                       Padding="15">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
-                                        <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
-                                               Source="{Binding FileTypeIcon}"
-                                               HeightRequest="40"
-                                               WidthRequest="40"
-                                               VerticalOptions="Center"
-                                               Margin="0,0,15,0" />
-                                        
-                                        <Label Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding FileName}"
-                                               FontSize="16"
-                                               TextColor="#333"
-                                               LineBreakMode="TailTruncation" />
-                                        
-                                        <Label Grid.Row="1" Grid.Column="1"
-                                               Text="{Binding FormattedSize}"
-                                               FontSize="12"
-                                               TextColor="#888" />
-                                        
-                                        <Button Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
-                                                Text="Download"
-                                                BackgroundColor="#3B2D79"
-                                                TextColor="White"
-                                                CornerRadius="8"
-                                                Padding="10,5"
-                                                FontSize="12"
-                                                CommandParameter="{Binding Id}"
-                                                Clicked="DownloadButton_Clicked" />
-                                    </Grid>
-                                </Frame>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
                 </VerticalStackLayout>
             </ScrollView>
+
+            <!-- Loading overlay -->
+            <Grid x:Name="LoadingGrid" 
+                  IsVisible="False" 
+                  BackgroundColor="#80000000">
+                <VerticalStackLayout HorizontalOptions="Center" 
+                                     VerticalOptions="Center" 
+                                     Spacing="16"
+                                     Padding="24">
+                    <ActivityIndicator x:Name="ActivitySpinner"
+                                       IsRunning="False"
+                                       Color="White"
+                                       HeightRequest="48"
+                                       WidthRequest="48"
+                                       HorizontalOptions="Center" />
+                    
+                    <Label x:Name="StatusLabel"
+                           Text="Loading..."
+                           TextColor="White"
+                           FontFamily="InterRegular"
+                           FontSize="16"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
         </Grid>
     </Grid>
 </ContentPage>

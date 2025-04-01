@@ -6,7 +6,7 @@ namespace CloudFileClient.Pages
     {
         private readonly AuthenticationService _authService;
         private readonly NetworkService _networkService;
-
+        
         public LoginPage(AuthenticationService authService, NetworkService networkService)
         {
             InitializeComponent();
@@ -21,14 +21,13 @@ namespace CloudFileClient.Pages
             // Clear any previous credentials
             UsernameEntry.Text = "";
             PasswordEntry.Text = "";
-            StatusLabel.Text = "";
-            StatusLabel.IsVisible = false;
+            NewUsernameEntry.Text = "";
+            NewPasswordEntry.Text = "";
+            EmailEntry.Text = "";
             
-            // Return to login panel
-            ShowLoginPanel();
-            
-            // Set focus to username entry
-            UsernameEntry.Focus();
+            // Make sure we're showing the login panel
+            LoginPanel.IsVisible = true;
+            CreateAccountPanel.IsVisible = false;
         }
 
         private async void LoginButton_Clicked(object sender, EventArgs e)
@@ -38,17 +37,14 @@ namespace CloudFileClient.Pages
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                await DisplayAlert("Error", "Please enter both username and password", "OK");
+                await DisplayAlert("Sign In Failed", "Please enter both username and password", "OK");
                 return;
             }
 
             // Show loading indicator
-            ActivitySpinner.IsVisible = true;
+            LoadingOverlay.IsVisible = true;
             ActivitySpinner.IsRunning = true;
-            StatusLabel.Text = "Logging in...";
-            StatusLabel.IsVisible = true;
-            LoginButton.IsEnabled = false;
-            CreateAccountButton.IsEnabled = false;
+            StatusLabel.Text = "Signing in...";
 
             try
             {
@@ -62,7 +58,7 @@ namespace CloudFileClient.Pages
                 else
                 {
                     // Show error message
-                    await DisplayAlert("Login Failed", message, "OK");
+                    await DisplayAlert("Sign In Failed", message, "OK");
                 }
             }
             catch (Exception ex)
@@ -72,24 +68,23 @@ namespace CloudFileClient.Pages
             finally
             {
                 // Hide loading indicator
-                ActivitySpinner.IsVisible = false;
+                LoadingOverlay.IsVisible = false;
                 ActivitySpinner.IsRunning = false;
-                StatusLabel.IsVisible = false;
-                LoginButton.IsEnabled = true;
-                CreateAccountButton.IsEnabled = true;
             }
         }
 
         private void CreateAccountButton_Clicked(object sender, EventArgs e)
         {
-            // Switch to account creation panel
-            ShowCreateAccountPanel();
+            // Switch to registration panel
+            LoginPanel.IsVisible = false;
+            CreateAccountPanel.IsVisible = true;
         }
 
         private void CancelButton_Clicked(object sender, EventArgs e)
         {
             // Switch back to login panel
-            ShowLoginPanel();
+            LoginPanel.IsVisible = true;
+            CreateAccountPanel.IsVisible = false;
         }
 
         private async void SubmitAccountButton_Clicked(object sender, EventArgs e)
@@ -100,17 +95,20 @@ namespace CloudFileClient.Pages
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                await DisplayAlert("Error", "Please enter both username and password", "OK");
+                await DisplayAlert("Account Creation Failed", "Please enter both username and password", "OK");
+                return;
+            }
+
+            if (TermsCheckBox.IsChecked == false)
+            {
+                await DisplayAlert("Terms & Conditions", "Please agree to the Terms & Conditions to continue", "OK");
                 return;
             }
 
             // Show loading indicator
-            ActivitySpinner.IsVisible = true;
+            LoadingOverlay.IsVisible = true;
             ActivitySpinner.IsRunning = true;
             StatusLabel.Text = "Creating account...";
-            StatusLabel.IsVisible = true;
-            SubmitAccountButton.IsEnabled = false;
-            CancelButton.IsEnabled = false;
 
             try
             {
@@ -119,10 +117,11 @@ namespace CloudFileClient.Pages
                 if (success)
                 {
                     // Account created successfully
-                    await DisplayAlert("Success", "Account created successfully. You can now login.", "OK");
+                    await DisplayAlert("Success", "Your account has been created successfully", "OK");
                     
                     // Switch back to login panel
-                    ShowLoginPanel();
+                    LoginPanel.IsVisible = true;
+                    CreateAccountPanel.IsVisible = false;
                     
                     // Pre-fill login fields with the new account info
                     UsernameEntry.Text = username;
@@ -141,15 +140,12 @@ namespace CloudFileClient.Pages
             finally
             {
                 // Hide loading indicator
-                ActivitySpinner.IsVisible = false;
+                LoadingOverlay.IsVisible = false;
                 ActivitySpinner.IsRunning = false;
-                StatusLabel.IsVisible = false;
-                SubmitAccountButton.IsEnabled = true;
-                CancelButton.IsEnabled = true;
             }
         }
 
-        private void SaveSettingsButton_Clicked(object sender, EventArgs e)
+        private async void SaveSettingsButton_Clicked(object sender, EventArgs e)
         {
             string serverAddress = ServerAddressEntry.Text?.Trim() ?? "localhost";
             string portText = ServerPortEntry.Text?.Trim() ?? "9000";
@@ -171,42 +167,36 @@ namespace CloudFileClient.Pages
             ServerAddressEntry.Text = serverAddress;
             ServerPortEntry.Text = port.ToString();
 
-            StatusLabel.Text = $"Server settings saved: {serverAddress}:{port}";
-            StatusLabel.IsVisible = true;
+            // Show confirmation
+            LoadingOverlay.IsVisible = true;
+            ActivitySpinner.IsRunning = true;
+            StatusLabel.Text = "Settings saved";
             
-            // Hide settings panel after saving
+            // Auto-hide after a delay
+            await Task.Delay(1500);
+            
+            // Hide loading overlay and settings panel
+            LoadingOverlay.IsVisible = false;
+            ActivitySpinner.IsRunning = false;
             ServerSettingsPanel.IsVisible = false;
-            ToggleSettingsButton.Text = "▼";
         }
         
         private void ToggleSettingsButton_Clicked(object sender, EventArgs e)
         {
             // Toggle the visibility of the settings panel
             ServerSettingsPanel.IsVisible = !ServerSettingsPanel.IsVisible;
-            
-            // Update the button text based on the panel visibility
-            ToggleSettingsButton.Text = ServerSettingsPanel.IsVisible ? "▲" : "▼";
         }
         
-        // Helper methods to toggle between login and account creation panels
-        private void ShowLoginPanel()
+        private void TogglePassword_Tapped(object sender, EventArgs e)
         {
-            LoginPanel.IsVisible = true;
-            CreateAccountPanel.IsVisible = false;
-            
-            // Clear account creation fields
-            NewUsernameEntry.Text = "";
-            NewPasswordEntry.Text = "";
-            EmailEntry.Text = "";
+            // Toggle password visibility
+            PasswordEntry.IsPassword = !PasswordEntry.IsPassword;
         }
         
-        private void ShowCreateAccountPanel()
+        private void ToggleNewPassword_Tapped(object sender, EventArgs e)
         {
-            LoginPanel.IsVisible = false;
-            CreateAccountPanel.IsVisible = true;
-            
-            // Set focus to new username entry
-            NewUsernameEntry.Focus();
+            // Toggle password visibility for registration form
+            NewPasswordEntry.IsPassword = !NewPasswordEntry.IsPassword;
         }
     }
 }

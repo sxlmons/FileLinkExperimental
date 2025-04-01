@@ -2,288 +2,521 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CloudFileClient.Pages.LoginPage"
-             BackgroundColor="#f4f6fc"
-             Title="CloudFile">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#2A2536">
 
     <Grid>
-        <!-- Background design with accent color -->
-        <BoxView Color="#3B2D79" 
-                 HorizontalOptions="Fill"
-                 VerticalOptions="Start"
-                 HeightRequest="220" />
-
-        <ScrollView Margin="0,20,0,0">
-            <VerticalStackLayout Spacing="0" Padding="0" VerticalOptions="FillAndExpand">
+        <!-- Main content grid with two columns -->
+        <Grid ColumnDefinitions="*,*">
+            <!-- Left side - Visual section with background image -->
+            <Grid Grid.Column="0">
+                <!-- Background image with overlay -->
+                <Image Aspect="AspectFill" Source="dunes_background.jpg"/>
                 
-                <!-- App Title (Emphasized) -->
-                <Label Text="CloudFile"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       FontSize="48"
-                       HorizontalOptions="Center"
-                       Margin="0,60,0,20" />
-
-                <!-- Tagline -->
-                <Label Text="Secure Cloud Storage"
-                       FontSize="18"
-                       TextColor="White"
-                       Opacity="0.9"
-                       HorizontalOptions="Center"
-                       Margin="0,0,0,30" />
-
-                <!-- Main Content Frame -->
-                <Frame Margin="20,10,20,20" 
-                       Padding="20" 
-                       CornerRadius="10" 
-                       HasShadow="True"
-                       BorderColor="Transparent"
-                       BackgroundColor="White"
-                       VerticalOptions="Center">
+                <!-- Purple overlay -->
+                <BoxView>
+                    <BoxView.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#662da8" Offset="0.0" />
+                            <GradientStop Color="#2A2536" Offset="1.0" />
+                        </LinearGradientBrush>
+                    </BoxView.Background>
+                </BoxView>
+                
+                <!-- Content on left side -->
+                <Grid RowDefinitions="Auto,*,Auto" Padding="40">
+                    <!-- Top logo area -->
+                    <Image Grid.Row="0"
+                           Source="cloudfile_logo.png"
+                           HeightRequest="36"
+                           HorizontalOptions="Start"
+                           VerticalOptions="Start" />
                     
-                    <!-- Using a Grid as the single content element for the Frame -->
-                    <Grid>
-                        <!-- Login Form (Initially Visible) -->
-                        <VerticalStackLayout x:Name="LoginPanel" 
-                                             Spacing="15" 
-                                             Padding="10" 
-                                             IsVisible="true">
-                            
-                            <Label Text="Sign In"
-                                   FontSize="24" 
-                                   FontAttributes="Bold"
-                                   TextColor="#3B2D79"
-                                   HorizontalOptions="Center" />
-                            
-                            <Label Text="Welcome back! Please login to your account"
-                                   FontSize="14"
-                                   TextColor="#666"
-                                   HorizontalOptions="Center"
-                                   Margin="0,0,0,10" />
-                            
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9"
-                                    Margin="0,5">
-                                <Entry x:Name="UsernameEntry"
-                                       Placeholder="Username"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9"
-                                    Margin="0,5">
-                                <Entry x:Name="PasswordEntry"
-                                       Placeholder="Password"
-                                       PlaceholderColor="#AAAAAA"
-                                       IsPassword="True"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Button x:Name="LoginButton"
-                                    Text="SIGN IN"
-                                    BackgroundColor="#3B2D79"
-                                    TextColor="White"
-                                    FontAttributes="Bold"
-                                    CornerRadius="8"
-                                    Margin="0,10"
-                                    HeightRequest="50"
-                                    Clicked="LoginButton_Clicked" />
-                            
-                            <Label Text="Don't have an account?"
-                                   TextColor="#666"
-                                   HorizontalOptions="Center"
-                                   FontSize="14" />
-                            
-                            <Button x:Name="CreateAccountButton"
-                                    Text="CREATE ACCOUNT"
-                                    BackgroundColor="Transparent"
-                                    TextColor="#3B2D79"
-                                    FontAttributes="Bold"
-                                    BorderColor="#3B2D79"
-                                    BorderWidth="1"
-                                    CornerRadius="8"
-                                    Margin="0,5"
-                                    HeightRequest="50"
-                                    Clicked="CreateAccountButton_Clicked" />
-                        </VerticalStackLayout>
-                        
-                        <!-- Account Creation Panel (Initially Hidden) -->
-                        <VerticalStackLayout x:Name="CreateAccountPanel" 
-                                             Spacing="15" 
-                                             Padding="10" 
-                                             IsVisible="false">
-                            
-                            <Label Text="Create New Account"
-                                   FontSize="24" 
-                                   FontAttributes="Bold"
-                                   TextColor="#3B2D79"
-                                   HorizontalOptions="Center" />
-                            
-                            <Label Text="Fill in the information to register"
-                                   FontSize="14"
-                                   TextColor="#666"
-                                   HorizontalOptions="Center"
-                                   Margin="0,0,0,10" />
-                            
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9">
-                                <Entry x:Name="NewUsernameEntry"
-                                       Placeholder="Username"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9">
-                                <Entry x:Name="NewPasswordEntry"
-                                       Placeholder="Password"
-                                       IsPassword="True"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9">
-                                <Entry x:Name="EmailEntry"
-                                       Placeholder="Email (Optional)"
-                                       Keyboard="Email"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Button x:Name="SubmitAccountButton"
-                                    Text="CREATE ACCOUNT"
-                                    BackgroundColor="#3B2D79"
-                                    TextColor="White"
-                                    FontAttributes="Bold"
-                                    CornerRadius="8"
-                                    Margin="0,10"
-                                    HeightRequest="50"
-                                    Clicked="SubmitAccountButton_Clicked" />
-                            
-                            <Button x:Name="CancelButton"
-                                    Text="BACK TO LOGIN"
-                                    BackgroundColor="Transparent"
-                                    TextColor="#666"
-                                    FontAttributes="Bold"
-                                    BorderColor="#CCC"
-                                    BorderWidth="1"
-                                    CornerRadius="8"
-                                    Margin="0,5"
-                                    HeightRequest="40"
-                                    Clicked="CancelButton_Clicked" />
-                        </VerticalStackLayout>
-                    </Grid>
-                </Frame>
-
-                <!-- Server Settings (Collapsible) -->
-                <Frame Margin="20,0,20,20" 
-                       Padding="5" 
-                       CornerRadius="10" 
-                       HasShadow="True"
-                       BorderColor="Transparent"
-                       BackgroundColor="White">
-                    
-                    <VerticalStackLayout>
-                        <Grid ColumnDefinitions="*, Auto">
-                            <Label Text="Server Settings" 
-                                   FontSize="16" 
-                                   TextColor="#3B2D79"
-                                   Margin="15"
-                                   Grid.Column="0" />
-                            
-                            <Button x:Name="ToggleSettingsButton"
-                                    Text="▼"
-                                    BackgroundColor="Transparent"
-                                    TextColor="#3B2D79"
-                                    BorderWidth="0"
-                                    FontSize="18"
-                                    Clicked="ToggleSettingsButton_Clicked"
-                                    Grid.Column="1" />
-                        </Grid>
-
-                        <VerticalStackLayout x:Name="ServerSettingsPanel" 
-                                             IsVisible="false" 
-                                             Padding="15,0,15,15" 
-                                             Spacing="10">
-                            
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9">
-                                <Entry x:Name="ServerAddressEntry"
-                                       Placeholder="Server Address"
-                                       Text="localhost"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Border Stroke="#E0E0E0"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 8"
-                                    Padding="15,0"
-                                    BackgroundColor="#F9F9F9">
-                                <Entry x:Name="ServerPortEntry"
-                                       Placeholder="Server Port"
-                                       Text="9000"
-                                       Keyboard="Numeric"
-                                       PlaceholderColor="#AAAAAA"
-                                       BackgroundColor="Transparent"
-                                       TextColor="#333333" />
-                            </Border>
-
-                            <Button x:Name="SaveSettingsButton"
-                                    Text="SAVE SETTINGS"
-                                    BackgroundColor="#4C3B8A"
-                                    TextColor="White"
-                                    FontAttributes="Bold"
-                                    CornerRadius="8"
-                                    Margin="0,5"
-                                    HeightRequest="40"
-                                    Clicked="SaveSettingsButton_Clicked" />
-                        </VerticalStackLayout>
+                    <!-- Center tagline -->
+                    <VerticalStackLayout Grid.Row="1"
+                                       VerticalOptions="Center">
+                        <Label Text="FileLink"
+                               TextColor="White"
+                               FontSize="56"
+                               FontFamily="InterBold"
+                               HorizontalOptions="Start" />
+                        <Label Text="Secure Storage,"
+                               TextColor="White"
+                               FontSize="28"
+                               FontFamily="InterSemiBold"
+                               HorizontalOptions="Start" />
+                        <Label Text="Anywhere, Anytime"
+                               TextColor="White"
+                               FontSize="28"
+                               FontFamily="InterSemiBold"
+                               HorizontalOptions="Start" />
                     </VerticalStackLayout>
-                </Frame>
+                    
+                    <!-- Bottom dots indicator -->
+                    <HorizontalStackLayout Grid.Row="2"
+                                        HorizontalOptions="Center"
+                                        Spacing="8">
+                        <BoxView Color="#8175B5" WidthRequest="20" HeightRequest="3" />
+                        <BoxView Color="#FFFFFF" Opacity="0.5" WidthRequest="20" HeightRequest="3" />
+                        <BoxView Color="#FFFFFF" Opacity="0.5" WidthRequest="20" HeightRequest="3" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Grid>
 
-                <!-- Loading Indicator and Status -->
-                <ActivityIndicator x:Name="ActivitySpinner"
-                                   IsRunning="false"
-                                   IsVisible="false"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"
-                                   Color="#3B2D79"
-                                   HeightRequest="50"
-                                   WidthRequest="50" />
-                
-                <Label x:Name="StatusLabel"
-                       Text=""
-                       HorizontalOptions="Center"
-                       IsVisible="false"
-                       TextColor="#3B2D79"
-                       Margin="0,5" />
-            </VerticalStackLayout>
-        </ScrollView>
+            <!-- Right side - Form section -->
+            <Grid Grid.Column="1" BackgroundColor="#2A2536" Padding="40">
+                <ScrollView>
+                    <Grid RowDefinitions="Auto,*,Auto" VerticalOptions="FillAndExpand">
+                        <!-- Back button (top) -->
+                        <Button Grid.Row="0"
+                                Text="Visit Our Website →"
+                                FontFamily="InterRegular"
+                                BackgroundColor="#3D3950"
+                                TextColor="White"
+                                FontSize="14"
+                                CornerRadius="20"
+                                HeightRequest="38"
+                                Padding="20,0"
+                                HorizontalOptions="End"
+                                VerticalOptions="Start" />
+                        
+                        <!-- Authentication panels (center) -->
+                        <Grid Grid.Row="1" VerticalOptions="Center">
+                            <!-- Login Panel -->
+                            <VerticalStackLayout x:Name="LoginPanel" 
+                                               Spacing="24" 
+                                               VerticalOptions="Center"
+                                               IsVisible="True">
+                                
+                                <!-- Title -->
+                                <Label Text="Sign in"
+                                       FontSize="32"
+                                       FontFamily="InterBold"
+                                       TextColor="White" />
+                                
+                                <!-- Subtitle with register link -->
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="Don't have an account?"
+                                           FontSize="14"
+                                           FontFamily="InterRegular"
+                                           TextColor="#B6B7CD" />
+                                    
+                                    <Label Text="Create account"
+                                           FontSize="14"
+                                           FontFamily="InterMedium"
+                                           TextColor="#8175B5">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="CreateAccountButton_Clicked" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </HorizontalStackLayout>
+                                
+                                <!-- Form fields -->
+                                <VerticalStackLayout Spacing="16" Margin="0,12,0,0">
+                                    <!-- Username field -->
+                                    <Border Stroke="#413D4F"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            BackgroundColor="#38344A"
+                                            Padding="16,0"
+                                            HeightRequest="52">
+                                        <Entry x:Name="UsernameEntry"
+                                               Placeholder="Username"
+                                               PlaceholderColor="#8C8AA0"
+                                               TextColor="White"
+                                               FontFamily="InterRegular"
+                                               FontSize="14"
+                                               BackgroundColor="Transparent"
+                                               VerticalOptions="Center" />
+                                    </Border>
+                                    
+                                    <!-- Password field -->
+                                    <Border Stroke="#413D4F"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            BackgroundColor="#38344A"
+                                            Padding="16,0"
+                                            HeightRequest="52">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Entry x:Name="PasswordEntry"
+                                                   Placeholder="Password"
+                                                   PlaceholderColor="#8C8AA0"
+                                                   IsPassword="True"
+                                                   TextColor="White"
+                                                   FontFamily="InterRegular"
+                                                   FontSize="14"
+                                                   BackgroundColor="Transparent"
+                                                   VerticalOptions="Center"
+                                                   Grid.Column="0" />
+                                            
+                                            <Image Source="eye_icon.png"
+                                                   WidthRequest="24"
+                                                   HeightRequest="24"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="End"
+                                                   Grid.Column="1">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="TogglePassword_Tapped" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </Grid>
+                                    </Border>
+                                    
+                                    <!-- Server settings (expandable) -->
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="Server settings"
+                                               FontFamily="InterMedium"
+                                               TextColor="#8175B5"
+                                               FontSize="14">
+                                            <Label.GestureRecognizers>
+                                                <TapGestureRecognizer Tapped="ToggleSettingsButton_Clicked" />
+                                            </Label.GestureRecognizers>
+                                        </Label>
+                                        
+                                        <VerticalStackLayout x:Name="ServerSettingsPanel"
+                                                         IsVisible="false"
+                                                         Spacing="16"
+                                                         Margin="0,8">
+                                            <!-- Server address field -->
+                                            <Border Stroke="#413D4F"
+                                                    StrokeThickness="1"
+                                                    StrokeShape="RoundRectangle 6"
+                                                    BackgroundColor="#38344A"
+                                                    Padding="16,0"
+                                                    HeightRequest="52">
+                                                <Entry x:Name="ServerAddressEntry"
+                                                       Placeholder="Server address"
+                                                       Text="localhost"
+                                                       PlaceholderColor="#8C8AA0"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       BackgroundColor="Transparent"
+                                                       VerticalOptions="Center" />
+                                            </Border>
+                                            
+                                            <!-- Server port field -->
+                                            <Border Stroke="#413D4F"
+                                                    StrokeThickness="1"
+                                                    StrokeShape="RoundRectangle 6"
+                                                    BackgroundColor="#38344A"
+                                                    Padding="16,0"
+                                                    HeightRequest="52">
+                                                <Entry x:Name="ServerPortEntry"
+                                                       Placeholder="Server port"
+                                                       Text="9000"
+                                                       Keyboard="Numeric"
+                                                       PlaceholderColor="#8C8AA0"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       BackgroundColor="Transparent"
+                                                       VerticalOptions="Center" />
+                                            </Border>
+                                            
+                                            <!-- Save settings button (smaller) -->
+                                            <Button x:Name="SaveSettingsButton"
+                                                    Text="Save settings"
+                                                    FontFamily="InterMedium"
+                                                    BackgroundColor="#8175B5"
+                                                    TextColor="White"
+                                                    FontSize="14"
+                                                    CornerRadius="6"
+                                                    HeightRequest="44"
+                                                    Margin="0,4"
+                                                    Clicked="SaveSettingsButton_Clicked" />
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                                
+                                <!-- Login button -->
+                                <Button x:Name="LoginButton"
+                                        Text="Sign in"
+                                        FontFamily="InterMedium"
+                                        BackgroundColor="#8175B5"
+                                        TextColor="White"
+                                        FontSize="16"
+                                        CornerRadius="6"
+                                        HeightRequest="52"
+                                        Margin="0,16,0,0"
+                                        Clicked="LoginButton_Clicked" />
+                                
+                                <!-- Social login options -->
+                                <VerticalStackLayout Spacing="16">
+                                    <Label Text="Or continue with"
+                                           FontSize="14"
+                                           FontFamily="InterRegular"
+                                           TextColor="#B6B7CD"
+                                           HorizontalOptions="Center" />
+                                    
+                                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="16">
+                                        <!-- Demo buttons for social login -->
+                                        <Border Stroke="#413D4F"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 6"
+                                                BackgroundColor="#38344A"
+                                                WidthRequest="120"
+                                                HeightRequest="46">
+                                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                               VerticalOptions="Center"
+                                                               Spacing="8">
+                                                <Image Source="google_icon.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center" />
+                                                <Label Text="Google"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                        
+                                        <Border Stroke="#413D4F"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 6"
+                                                BackgroundColor="#38344A"
+                                                WidthRequest="120"
+                                                HeightRequest="46">
+                                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                               VerticalOptions="Center"
+                                                               Spacing="8">
+                                                <Image Source="apple_logo_grey.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center" />
+                                                <Label Text="Apple"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                            
+                            <!-- Registration Panel -->
+                            <VerticalStackLayout x:Name="CreateAccountPanel" 
+                                               Spacing="24" 
+                                               VerticalOptions="Center"
+                                               IsVisible="False">
+                                
+                                <!-- Title -->
+                                <Label Text="Create an account"
+                                       FontSize="32"
+                                       FontFamily="InterBold"
+                                       TextColor="White" />
+                                
+                                <!-- Subtitle with login link -->
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="Already have an account?"
+                                           FontSize="14"
+                                           FontFamily="InterRegular"
+                                           TextColor="#B6B7CD" />
+                                    
+                                    <Label Text="Log in"
+                                           FontSize="14"
+                                           FontFamily="InterMedium"
+                                           TextColor="#8175B5">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="CancelButton_Clicked" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </HorizontalStackLayout>
+                                
+                                <!-- Form fields -->
+                                <VerticalStackLayout Spacing="16" Margin="0,12,0,0">
+                                    <!-- Username field -->
+                                    <Border Stroke="#413D4F"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            BackgroundColor="#38344A"
+                                            Padding="16,0"
+                                            HeightRequest="52">
+                                        <Entry x:Name="NewUsernameEntry"
+                                               Placeholder="Username"
+                                               PlaceholderColor="#8C8AA0"
+                                               TextColor="White"
+                                               FontFamily="InterRegular"
+                                               FontSize="14"
+                                               BackgroundColor="Transparent"
+                                               VerticalOptions="Center" />
+                                    </Border>
+                                    
+                                    <!-- Password field -->
+                                    <Border Stroke="#413D4F"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            BackgroundColor="#38344A"
+                                            Padding="16,0"
+                                            HeightRequest="52">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Entry x:Name="NewPasswordEntry"
+                                                   Placeholder="Password"
+                                                   PlaceholderColor="#8C8AA0"
+                                                   IsPassword="True"
+                                                   TextColor="White"
+                                                   FontFamily="InterRegular"
+                                                   FontSize="14"
+                                                   BackgroundColor="Transparent"
+                                                   VerticalOptions="Center"
+                                                   Grid.Column="0" />
+                                            
+                                            <Image Source="eye_icon.png"
+                                                   WidthRequest="24"
+                                                   HeightRequest="24"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="End"
+                                                   Grid.Column="1">
+                                                <Image.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="ToggleNewPassword_Tapped" />
+                                                </Image.GestureRecognizers>
+                                            </Image>
+                                        </Grid>
+                                    </Border>
+                                    
+                                    <!-- Email field -->
+                                    <Border Stroke="#413D4F"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 6"
+                                            BackgroundColor="#38344A"
+                                            Padding="16,0"
+                                            HeightRequest="52">
+                                        <Entry x:Name="EmailEntry"
+                                               Placeholder="Email (optional)"
+                                               Keyboard="Email"
+                                               PlaceholderColor="#8C8AA0"
+                                               TextColor="White"
+                                               FontFamily="InterRegular"
+                                               FontSize="14"
+                                               BackgroundColor="Transparent"
+                                               VerticalOptions="Center" />
+                                    </Border>
+                                    
+                                    <!-- Terms and conditions -->
+                                    <Grid ColumnDefinitions="Auto,*" Margin="0,8">
+                                        <CheckBox x:Name="TermsCheckBox"
+                                                  Color="#8175B5"
+                                                  Grid.Column="0" />
+                                        
+                                        <Label Grid.Column="1" VerticalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="I agree to the "
+                                                          TextColor="#B6B7CD"
+                                                          FontFamily="InterRegular"
+                                                          FontSize="14" />
+                                                    <Span Text="Terms &amp; Conditions"
+                                                          TextColor="#8175B5"
+                                                          FontFamily="InterMedium"
+                                                          FontSize="14" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                </VerticalStackLayout>
+                                
+                                <!-- Create account button -->
+                                <Button x:Name="SubmitAccountButton"
+                                        Text="Create account"
+                                        FontFamily="InterMedium"
+                                        BackgroundColor="#8175B5"
+                                        TextColor="White"
+                                        FontSize="16"
+                                        CornerRadius="6"
+                                        HeightRequest="52"
+                                        Margin="0,16,0,0"
+                                        Clicked="SubmitAccountButton_Clicked" />
+                                
+                                <!-- Social login options -->
+                                <VerticalStackLayout Spacing="16">
+                                    <Label Text="Or register with"
+                                           FontSize="14"
+                                           FontFamily="InterRegular"
+                                           TextColor="#B6B7CD"
+                                           HorizontalOptions="Center" />
+                                    
+                                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="16">
+                                        <!-- Demo buttons for social login -->
+                                        <Border Stroke="#413D4F"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 6"
+                                                BackgroundColor="#38344A"
+                                                WidthRequest="120"
+                                                HeightRequest="46">
+                                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                               VerticalOptions="Center"
+                                                               Spacing="8">
+                                                <Image Source="google_symbol.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center" />
+                                                <Label Text="Google"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                        
+                                        <Border Stroke="#413D4F"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 6"
+                                                BackgroundColor="#38344A"
+                                                WidthRequest="120"
+                                                HeightRequest="46">
+                                            <HorizontalStackLayout HorizontalOptions="Center"
+                                                               VerticalOptions="Center"
+                                                               Spacing="8">
+                                                <Image Source="apple_icon.png"
+                                                       WidthRequest="20"
+                                                       HeightRequest="20"
+                                                       VerticalOptions="Center" />
+                                                <Label Text="Apple"
+                                                       TextColor="White"
+                                                       FontFamily="InterRegular"
+                                                       FontSize="14"
+                                                       VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Grid>
+                </ScrollView>
+            </Grid>
+        </Grid>
+        
+        <!-- Loading overlay -->
+        <Grid x:Name="LoadingOverlay"
+              IsVisible="false"
+              BackgroundColor="#66000000">
+            <Border BackgroundColor="#2A2536"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    WidthRequest="180"
+                    HeightRequest="180"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+                <VerticalStackLayout HorizontalOptions="Center" 
+                                   VerticalOptions="Center" 
+                                   Spacing="20">
+                    <ActivityIndicator x:Name="ActivitySpinner"
+                                       IsRunning="False"
+                                       Color="#8175B5" 
+                                       HeightRequest="50" 
+                                       WidthRequest="50" />
+                    
+                    <Label x:Name="StatusLabel"
+                           Text="Signing in..." 
+                           TextColor="White"
+                           FontSize="16"
+                           FontFamily="InterRegular"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
     </Grid>
 </ContentPage>

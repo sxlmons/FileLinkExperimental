@@ -16,6 +16,12 @@ namespace CloudFileClient
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                    
+                    // Add Inter font family
+                    fonts.AddFont("Inter_18-Regular.ttf", "InterRegular");
+                    fonts.AddFont("Inter_18-Medium.ttf", "InterMedium");
+                    fonts.AddFont("Inter_18-SemiBold.ttf", "InterSemiBold");
+                    fonts.AddFont("Inter_18-Bold.ttf", "InterBold");
                 })
                 .UseSkiaSharp();
             
